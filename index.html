@@ -84,20 +84,6 @@
             font-size: 0.9rem;
             color: #888;
         }
-        .loader {
-            border: 4px solid #00ffcc;
-            border-top: 4px solid #ff007a;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 10px auto;
-            display: none;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
         @media (max-width: 768px) {
             #controls {
                 flex-direction: column;
@@ -119,13 +105,11 @@
     </header>
     <main>
         <section id="status">
-            <p>상태: 데이터 로드 대기 중...</p>
-            <div class="loader" id="loader"></div>
+            <p>상태: 데이터 로드 완료! 총 1160 회차</p>
         </section>
         <section id="controls">
-            <button id="load-all-btn">전체 회차 로드</button>
-            <button id="load-latest-btn">최신 회차 불러오기</button>
             <button id="generate-btn">번호 10개 생성</button>
+            <button id="load-latest-btn">최신 회차 불러오기</button>
         </section>
         <section id="results">
             <p>생성된 번호가 여기에 표시됩니다.</p>
@@ -141,14 +125,14 @@
     <!-- Google Fonts: Orbitron -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <script>
-        // 전체 회차 데이터 (1회차부터 1160회차까지 일부 포함, 전체는 별도 수집 필요)
-        const lottoData = JSON.parse(localStorage.getItem('lottoData')) || {
+        // 1회차부터 1160회차까지 실제 데이터 (일부만 예시, 전체는 별도 수집 필요)
+        const lottoData = {
             1: [10, 23, 29, 33, 37, 40],
             2: [9, 13, 21, 25, 32, 42],
             3: [11, 16, 19, 21, 27, 31],
             4: [14, 27, 30, 31, 40, 42],
             5: [16, 24, 29, 40, 41, 42],
-            // ... (6회차부터 1155회차까지 생략, 실제 데이터 필요)
+            // ... (6회차부터 1155회차까지 실제 데이터 필요, 여기선 생략)
             1156: [8, 13, 19, 27, 40, 42],
             1157: [3, 8, 15, 27, 29, 35],
             1158: [3, 12, 19, 25, 38, 41],
@@ -156,83 +140,43 @@
             1160: [7, 13, 18, 36, 39, 45]
         };
 
+        // localStorage에서 데이터 로드, 없으면 초기 데이터로 설정
+        let storedData = JSON.parse(localStorage.getItem('lottoData')) || lottoData;
+        for (let draw in lottoData) {
+            storedData[draw] = lottoData[draw]; // 중복 제거 및 초기 데이터 병합
+        }
+        let lottoDataCurrent = storedData;
+
         const status = document.getElementById('status');
-        const loader = document.getElementById('loader');
-        const loadAllBtn = document.getElementById('load-all-btn');
-        const loadLatestBtn = document.getElementById('load-latest-btn');
         const generateBtn = document.getElementById('generate-btn');
+        const loadLatestBtn = document.getElementById('load-latest-btn');
         const results = document.getElementById('results');
 
         // 데이터 저장 함수
         function saveLottoData() {
-            localStorage.setItem('lottoData', JSON.stringify(lottoData));
+            localStorage.setItem('lottoData', JSON.stringify(lottoDataCurrent));
         }
 
-        // 전체 회차 로드 (효율적 비동기 처리)
-        async function loadAllDraws() {
-            loader.style.display = 'block';
-            status.innerHTML = '<p>상태: 전체 회차 로드 중 (0%)</p>';
-            const totalDraws = 1160; // 최신 회차 기준
-            const chunkSize = 50; // 효율성을 위한 청크 크기
-            let loadedDraws = Object.keys(lottoData).length;
-
-            for (let start = 1; start <= totalDraws; start += chunkSize) {
-                const end = Math.min(start + chunkSize - 1, totalDraws);
-                const promises = [];
-                for (let draw = start; draw <= end; draw++) {
-                    if (!lottoData[draw]) {
-                        promises.push(new Promise(resolve => {
-                            setTimeout(() => {
-                                lottoData[draw] = generateRandomNumbers(); // 실제 데이터는 별도 수집 필요
-                                resolve();
-                            }, 10);
-                        }));
-                    }
-                }
-                await Promise.all(promises);
-                loadedDraws += promises.length;
-                status.innerHTML = `<p>상태: 전체 회차 로드 중 (${Math.round((loadedDraws / totalDraws) * 100)}%)</p>`;
-            }
-
-            saveLottoData();
-            loader.style.display = 'none';
-            status.innerHTML = `<p>상태: 전체 회차 로드 완료! 총 ${Object.keys(lottoData).length} 회차</p>`;
-            updateChart();
-        }
-
-        // 최신 회차 불러오기 (시뮬레이션)
+        // 최신 회차 불러오기 (시뮬레이션, 실제 데이터는 별도 수집 필요)
         async function loadLatestDraw() {
-            loader.style.display = 'block';
-            status.innerHTML = '<p>상태: 최신 회차 불러오는 중...</p>';
-
-            const latestKnownDraw = Math.max(...Object.keys(lottoData).map(Number)) || 1159;
-            const latestDraw = 1160; // 최신 회차 고정
+            const latestKnownDraw = Math.max(...Object.keys(lottoDataCurrent).map(Number)) || 1159;
+            const latestDraw = 1160; // 최신 회차 고정 (2025-02-27 기준)
             if (latestKnownDraw < latestDraw) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                lottoData[latestDraw] = [7, 13, 18, 36, 39, 45]; // 1160회 실제 데이터
+                lottoDataCurrent[latestDraw] = [7, 13, 18, 36, 39, 45]; // 1160회 실제 데이터
+                saveLottoData();
+                status.innerHTML = `<p>상태: 최신 회차 업데이트 완료! 총 ${Object.keys(lottoDataCurrent).length} 회차</p>`;
+                updateChart();
+            } else {
+                status.innerHTML = `<p>상태: 이미 최신 회차까지 로드됨! 총 ${Object.keys(lottoDataCurrent).length} 회차</p>`;
             }
-
-            saveLottoData();
-            loader.style.display = 'none';
-            status.innerHTML = `<p>상태: 최신 회차 업데이트 완료! 총 ${Object.keys(lottoData).length} 회차</p>`;
-            updateChart();
-        }
-
-        // 임의 번호 생성 함수 (실제 데이터 대체용)
-        function generateRandomNumbers() {
-            let numbers = new Set();
-            while (numbers.size < 6) {
-                numbers.add(Math.floor(Math.random() * 45) + 1);
-            }
-            return Array.from(numbers).sort((a, b) => a - b);
         }
 
         // 빈도 분석
         function frequencyAnalysis() {
             let numberCount = Array(45).fill(0);
-            for (let draw in lottoData) {
-                if (Array.isArray(lottoData[draw])) {
-                    lottoData[draw].forEach(num => numberCount[num - 1]++);
+            for (let draw in lottoDataCurrent) {
+                if (Array.isArray(lottoDataCurrent[draw])) {
+                    lottoDataCurrent[draw].forEach(num => numberCount[num - 1]++);
                 }
             }
             return numberCount.map((count, idx) => ({ number: idx + 1, count }))
@@ -315,16 +259,15 @@
         }
 
         // 이벤트 리스너
-        loadAllBtn.addEventListener('click', loadAllDraws);
-        loadLatestBtn.addEventListener('click', loadLatestDraw);
         generateBtn.addEventListener('click', () => {
             const numbers = generateLottoNumbers();
             results.innerHTML = numbers.map((set, idx) => 
                 `<p>${idx + 1}: ${set.join(', ')}</p>`).join('');
         });
+        loadLatestBtn.addEventListener('click', loadLatestDraw);
 
         // 초기 상태
-        status.innerHTML = `<p>상태: 데이터 로드 완료! 총 ${Object.keys(lottoData).length} 회차</p>`;
+        status.innerHTML = `<p>상태: 데이터 로드 완료! 총 ${Object.keys(lottoDataCurrent).length} 회차</p>`;
         updateChart();
     </script>
 </body>
