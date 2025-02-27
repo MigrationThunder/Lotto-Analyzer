@@ -554,35 +554,39 @@
                 simNumbers.forEach(num => simFreq[num - 1]++);
             }
 
-            const clusters = simpleKMeans(3);
-            const clusterFreq = clusters.map(cluster => {
-                const freq = Array(45).fill(0);
-                cluster.forEach(nums => nums.forEach(num => freq[num - 1]++));
-                return freq;
-            });
+            const clusterData = simpleKMeans(3);
+            if (clusterData && clusterData.length > 0) {
+                const clusterFreq = clusterData.map(cluster => {
+                    const freq = Array(45).fill(0);
+                    cluster.forEach(nums => nums.forEach(num => freq[num - 1]++));
+                    return freq;
+                });
 
-            const combinedFreq = simFreq.map((f, i) => f + clusterFreq.reduce((sum, cf) => sum + cf[i], 0));
-            const topNumbers = combinedFreq
-                .map((freq, idx) => ({ num: idx + 1, freq }))
-                .sort((a, b) => b.freq - a.freq)
-                .slice(0, 10)
-                .map(item => item.num);
+                const combinedFreq = simFreq.map((f, i) => f + clusterFreq.reduce((sum, cf) => sum + (cf[i] || 0), 0));
+                const topNumbers = combinedFreq
+                    .map((freq, idx) => ({ num: idx + 1, freq }))
+                    .sort((a, b) => b.freq - a.freq)
+                    .slice(0, 10)
+                    .map(item => item.num);
 
-            const div = document.createElement('div');
-            div.className = 'recommendation';
-            div.textContent = `Advanced Recommendation: ${topNumbers.join(', ')}`;
-            lottoList.appendChild(div);
+                const div = document.createElement('div');
+                div.className = 'recommendation';
+                div.textContent = `Advanced Recommendation: ${topNumbers.join(', ')}`;
+                lottoList.appendChild(div);
 
-            const canvas = document.createElement('canvas');
-            lottoList.appendChild(canvas);
-            currentChart = new Chart(canvas, {
-                type: 'bar',
-                data: {
-                    labels: Array.from({ length: 45 }, (_, i) => i + 1),
-                    datasets: [{ label: 'Simulated Frequency', data: simFreq, backgroundColor: 'rgba(0, 247, 255, 0.6)', borderColor: 'rgba(0, 247, 255, 1)', borderWidth: 1 }]
-                },
-                options: { indexAxis: 'y', scales: { x: { beginAtZero: true } } }
-            });
+                const canvas = document.createElement('canvas');
+                lottoList.appendChild(canvas);
+                currentChart = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels: Array.from({ length: 45 }, (_, i) => i + 1),
+                        datasets: [{ label: 'Simulated Frequency', data: simFreq, backgroundColor: 'rgba(0, 247, 255, 0.6)', borderColor: 'rgba(0, 247, 255, 1)', borderWidth: 1 }]
+                    },
+                    options: { indexAxis: 'y', scales: { x: { beginAtZero: true } } }
+                });
+            } else {
+                lottoList.innerHTML += '<p>클러스터링 실패: 데이터 부족</p>';
+            }
         }
 
         // 전략 비교
@@ -684,7 +688,7 @@
                 const pastNumbers = lottoData.map(entry => entry.numbers);
                 weights = weights.map((w, i) => {
                     const similarity = pastNumbers.reduce((sum, nums) => sum + (nums.includes(i + 1) ? 1 : 0), 0) / pastNumbers.length;
-                    return w * (1 + similarity); // 빈도수에 과거 유사도 가중
+                    return w * (1 + similarity);
                 });
 
                 // 과거 데이터 패턴 분석
@@ -825,14 +829,17 @@
 
         function clusteringNumbers() {
             const clusters = simpleKMeans(3);
-            const clusterFreq = Array(45).fill(0);
-            clusters.forEach(cluster => {
-                cluster.forEach(nums => nums.forEach(num => clusterFreq[num - 1]++));
-            });
-            return clusterFreq.map((freq, idx) => ({ num: idx + 1, freq }))
-                .sort((a, b) => b.freq - a.freq)
-                .slice(0, 6)
-                .map(item => item.num);
+            if (clusters && clusters.length > 0) {
+                const clusterFreq = Array(45).fill(0);
+                clusters.forEach(cluster => {
+                    cluster.forEach(nums => nums.forEach(num => clusterFreq[num - 1]++));
+                });
+                return clusterFreq.map((freq, idx) => ({ num: idx + 1, freq }))
+                    .sort((a, b) => b.freq - a.freq)
+                    .slice(0, 6)
+                    .map(item => item.num);
+            }
+            return pureRandom(); // 클러스터링 실패 시 기본값
         }
 
         function balancedMix() {
@@ -868,21 +875,29 @@
 
         function simpleKMeans(k) {
             const data = lottoData.map(entry => entry.numbers);
-            if (data.length < k) return [data];
+            if (!data || data.length < k || data.length === 0) {
+                console.warn("Insufficient data for clustering, returning single cluster or empty");
+                return data.length > 0 ? [data] : [];
+            }
+
             const centroids = data.slice(0, k);
+            let clusters = Array(k).fill().map(() => []);
+
             for (let iter = 0; iter < 10; iter++) {
-                const clusters = Array(k).fill().map(() => []);
+                clusters = Array(k).fill().map(() => []); // 재초기화
                 data.forEach(numbers => {
                     const distances = centroids.map(c => euclideanDistance(c, numbers));
                     const closest = distances.indexOf(Math.min(...distances));
                     clusters[closest].push(numbers);
                 });
+
                 centroids.forEach((_, i) => {
                     if (clusters[i].length > 0) {
                         centroids[i] = averageNumbers(clusters[i]);
                     }
                 });
             }
+
             return clusters.filter(c => c.length > 0);
         }
 
