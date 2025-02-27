@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Future Lotto Bot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            color: #00ffcc;
+            font-family: 'Orbitron', sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        header h1 {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            text-shadow: 0 0 10px #00ffcc;
+        }
+        main {
+            max-width: 1200px;
+            width: 100%;
+        }
+        section {
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        #status, #results, #chart-container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+        }
+        #status p {
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #ff007a;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            width: clamp(150px, 40%, 300px);
+        }
+        button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #ff007a;
+        }
+        #results p {
+            font-size: 1rem;
+            text-shadow: 0 0 5px #00ffcc;
+            margin: 5px 0;
+            text-align: center;
+        }
+        #chart-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+        @media (max-width: 768px) {
+            #controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            button {
+                width: 80%;
+                max-width: 250px;
+            }
+            #chart-container {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Future Lotto Bot</h1>
+    </header>
+    <main>
+        <section id="status">
+            <p>상태: 샘플 데이터 로드 완료 (5회차)</p>
+        </section>
+        <section id="controls">
+            <button id="generate-btn">번호 10개 생성</button>
+        </section>
+        <section id="results">
+            <p>생성된 번호가 여기에 표시됩니다.</p>
+        </section>
+        <section id="chart-container">
+            <canvas id="freq-chart"></canvas>
+        </section>
+    </main>
+    <footer>Powered by xAI | 2025</footer>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts: Orbitron -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+        // 샘플 데이터 (서버 없이 포함)
+        const lottoData = {
+            1: [10, 23, 29, 33, 37, 40],
+            2: [9, 13, 21, 25, 32, 42],
+            3: [11, 16, 19, 21, 27, 31],
+            4: [14, 27, 30, 31, 40, 42],
+            5: [16, 24, 29, 40, 41, 42]
+        };
+
+        const status = document.getElementById('status');
+        const generateBtn = document.getElementById('generate-btn');
+        const results = document.getElementById('results');
+
+        // 빈도 분석
+        function frequencyAnalysis() {
+            let numberCount = Array(45).fill(0);
+            for (let draw in lottoData) {
+                if (Array.isArray(lottoData[draw])) {
+                    lottoData[draw].forEach(num => numberCount[num - 1]++);
+                }
+            }
+            return numberCount.map((count, idx) => ({ number: idx + 1, count }))
+                .sort((a, b) => b.count - a.count);
+        }
+
+        // 홀짝 균형
+        function oddEvenBalance(numbers) {
+            let odds = numbers.filter(n => n % 2 === 1).length;
+            return { odds, evens: 6 - odds };
+        }
+
+        // 높낮이 균형
+        function highLowBalance(numbers) {
+            let lows = numbers.filter(n => n <= 22).length;
+            return { lows, highs: 6 - lows };
+        }
+
+        // 숫자 합계
+        function sumNumbers(numbers) {
+            return numbers.reduce((sum, num) => sum + num, 0);
+        }
+
+        // 번호 생성
+        function generateLottoNumbers() {
+            const freqAnalysis = frequencyAnalysis();
+            const topNumbers = freqAnalysis.slice(0, 10).map(n => n.number);
+            let recommendations = [];
+
+            while (recommendations.length < 10) {
+                let set = new Set();
+                for (let i = 0; i < 3; i++) {
+                    set.add(topNumbers[Math.floor(Math.random() * 10)]);
+                }
+                while (set.size < 6) {
+                    set.add(Math.floor(Math.random() * 45) + 1);
+                }
+                let numbers = Array.from(set).sort((a, b) => a - b);
+                const { odds, evens } = oddEvenBalance(numbers);
+                const { lows, highs } = highLowBalance(numbers);
+                const sum = sumNumbers(numbers);
+                if (odds >= 2 && evens >= 2 && lows >= 2 && highs >= 2 && sum >= 106 && sum <= 170) {
+                    recommendations.push(numbers);
+                }
+            }
+            return recommendations;
+        }
+
+        // 그래프 업데이트
+        let chart;
+        function updateChart() {
+            const freqAnalysis = frequencyAnalysis().slice(0, 20);
+            const labels = freqAnalysis.map(n => n.number);
+            const data = freqAnalysis.map(n => n.count);
+
+            if (chart) chart.destroy();
+            chart = new Chart(document.getElementById('freq-chart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '숫자 빈도 (상위 20)',
+                        data: data,
+                        backgroundColor: 'rgba(0, 255, 204, 0.7)',
+                        borderColor: '#00ffcc',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: '#00ffcc' } },
+                        x: { ticks: { color: '#00ffcc' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#00ffcc' } }
+                    }
+                }
+            });
+        }
+
+        // 이벤트 리스너
+        generateBtn.addEventListener('click', () => {
+            const numbers = generateLottoNumbers();
+            results.innerHTML = numbers.map((set, idx) => 
+                `<p>${idx + 1}: ${set.join(', ')}</p>`).join('');
+        });
+
+        // 초기 그래프 표시
+        updateChart();
+    </script>
+</body>
+</html>
