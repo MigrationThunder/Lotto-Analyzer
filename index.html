@@ -141,19 +141,18 @@
     </div>
 
     <script>
-        // 로컬 스토리지에서 데이터 로드 (안전하게 배열 보장)
+        // 로컬 스토리지에서 데이터 로드
         let lottoData = [];
         try {
             const storedData = localStorage.getItem('lottoData');
             if (storedData) {
                 const parsedData = JSON.parse(storedData);
-                // 배열인지 확인하고, 아니면 빈 배열로 초기화
                 lottoData = Array.isArray(parsedData) ? parsedData : [];
             }
         } catch (error) {
             console.error('로컬 스토리지 데이터 로드 실패:', error.message);
-            lottoData = []; // 오류 시 빈 배열로 초기화
-            localStorage.setItem('lottoData', JSON.stringify(lottoData)); // 손상된 데이터 덮어쓰기
+            lottoData = [];
+            localStorage.setItem('lottoData', JSON.stringify(lottoData));
         }
 
         // 데이터 표시 함수
@@ -172,12 +171,23 @@
             });
         }
 
-        // API 호출 함수
+        // API 호출 함수 (429 오류 대비 응답 검증 추가)
         async function fetchLottoData(drwNo) {
             const url = `https://cors-anywhere.herokuapp.com/https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo=${drwNo}`;
             try {
                 const response = await fetch(url);
-                const data = await response.json();
+                if (!response.ok) {
+                    console.error(`회차 ${drwNo} 요청 실패: ${response.status} ${response.statusText}`);
+                    return null;
+                }
+                const text = await response.text(); // 먼저 텍스트로 받음
+                let data;
+                try {
+                    data = JSON.parse(text); // JSON 파싱 시도
+                } catch (e) {
+                    console.error(`회차 ${drwNo} JSON 파싱 실패:`, text);
+                    return null;
+                }
                 if (data.returnValue === 'success') {
                     return {
                         drwNo: data.drwNo,
@@ -195,10 +205,12 @@
             }
         }
 
-        // 모든 회차 가져오기
+        // 모든 회차 가져오기 (요청 제한 고려)
         async function fetchAllLottoData() {
             const latestDrwNo = 1100; // 동적 확인 필요 시 수정
             const existingDrwNos = new Set(lottoData.map(d => d.drwNo));
+            let failedAttempts = 0;
+            const maxAttempts = 5; // 연속 실패 허용 횟수
 
             for (let i = 1; i <= latestDrwNo; i++) {
                 if (!existingDrwNos.has(i)) {
@@ -207,9 +219,16 @@
                         lottoData.push(data);
                         existingDrwNos.add(i);
                         console.log(`${i}회차 가져오기 완료`);
+                        failedAttempts = 0; // 성공 시 실패 카운트 초기화
+                    } else {
+                        failedAttempts++;
+                        if (failedAttempts >= maxAttempts) {
+                            alert('연속 실패 횟수 초과로 중단합니다. 잠시 후 다시 시도해주세요.');
+                            break;
+                        }
                     }
                 }
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 2000)); // 2초 대기
             }
 
             lottoData.sort((a, b) => a.drwNo - b.drwNo);
