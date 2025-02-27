@@ -211,31 +211,27 @@
 
         // 최신 회차 번호 동적 확인
         async function getLatestDrwNo() {
-            const maxDrwNo = 1200; // 충분히 넉넉한 최대값
+            const maxDrwNo = 1200;
             let latestDrwNo = 0;
-
-            // 저장된 데이터에서 최신 회차 확인
             const latestStored = lottoData.length > 0 ? Math.max(...lottoData.map(d => d.drwNo)) : 0;
-            let start = latestStored > 0 ? latestStored : 1000; // 저장된 데이터 있으면 거기서 시작
+            let start = latestStored > 0 ? latestStored : 1000;
 
-            // 최신 회차 탐색
             for (let i = start; i <= maxDrwNo; i += 10) {
                 const data = await fetchLottoData(i);
                 if (data) {
                     latestDrwNo = i;
                 } else {
-                    // 데이터 없는 회차 만나면 이전까지가 최신
                     for (let j = i - 1; j >= start; j--) {
                         const lastData = await fetchLottoData(j);
                         if (lastData) {
-                            return j; // 정확한 최신 회차 반환
+                            return j;
                         }
                     }
                     break;
                 }
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
-            return latestDrwNo > 0 ? latestDrwNo : start; // 최소값 반환
+            return latestDrwNo > 0 ? latestDrwNo : start;
         }
 
         // 모든 회차 가져오기
@@ -275,10 +271,10 @@
             alert(`모든 회차 데이터를 가져왔습니다! (최신: ${latestDrwNo}회차)`);
         }
 
-        // 최신 회차 업데이트 (없는 회차까지 탐색)
+        // 최신 회차 업데이트
         async function updateLatestLotto() {
             const latestStored = lottoData.length > 0 ? Math.max(...lottoData.map(d => d.drwNo)) : 0;
-            const maxDrwNo = 1200; // 탐색 최대 범위
+            const maxDrwNo = 1200;
             const existingDrwNos = new Set(lottoData.map(d => d.drwNo));
             let failedAttempts = 0;
             const maxAttempts = 5;
@@ -310,8 +306,12 @@
             alert(`최신 회차(${latestFound})까지 업데이트되었습니다!`);
         }
 
-        // 페이지 로드 시 데이터 표시
-        window.onload = displayLottoData;
+        // 페이지 로드 시 데이터 표시 및 자동 갱신 설정
+        window.onload = () => {
+            displayLottoData();
+            updateLatestLotto(); // 초기 갱신
+            setInterval(updateLatestLotto, 7 * 24 * 60 * 60 * 1000); // 7일마다 갱신
+        };
     </script>
 </body>
 </html>
