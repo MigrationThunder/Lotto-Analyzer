@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>미래지향적 로또 분석기</title>
     <style>
-        /* 현대적인 전체 스타일 */
         body {
             background: linear-gradient(135deg, #1e1e2f 0%, #2a4066 100%);
             color: #ffffff;
@@ -18,8 +17,6 @@
             align-items: center;
             overflow-x: hidden;
         }
-
-        /* 제목 스타일 */
         h1 {
             font-size: 2.8em;
             font-weight: 700;
@@ -30,8 +27,6 @@
             margin-bottom: 20px;
             animation: slideIn 1s ease-out;
         }
-
-        /* 컨테이너 (유리 효과) */
         .container {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(15px);
@@ -43,8 +38,6 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             animation: fadeInUp 1s ease-out;
         }
-
-        /* 버튼 스타일 */
         button {
             background: linear-gradient(45deg, #00ddeb, #ff007a);
             border: none;
@@ -61,8 +54,6 @@
             transform: translateY(-3px);
             box-shadow: 0 5px 15px rgba(255, 0, 122, 0.5);
         }
-
-        /* 로또 데이터 리스트 */
         #lottoList {
             margin-top: 20px;
             max-height: 500px;
@@ -84,8 +75,6 @@
             transform: scale(1.02);
             background: rgba(255, 255, 255, 0.15);
         }
-
-        /* 스크롤바 커스터마이징 */
         #lottoList::-webkit-scrollbar {
             width: 8px;
         }
@@ -96,8 +85,6 @@
         #lottoList::-webkit-scrollbar-track {
             background: rgba(255, 255, 255, 0.1);
         }
-
-        /* 애니메이션 정의 */
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(50px); }
             to { opacity: 1; transform: translateY(0); }
@@ -110,8 +97,6 @@
             from { opacity: 0; transform: translateX(-20px); }
             to { opacity: 1; transform: translateX(0); }
         }
-
-        /* 반응형 디자인 */
         @media (max-width: 600px) {
             h1 { font-size: 2em; }
             .container { padding: 20px; }
@@ -131,7 +116,7 @@
         // 로컬 스토리지에서 데이터 관리
         let lottoData = JSON.parse(localStorage.getItem('lottoData')) || [];
 
-        // 화면에 데이터 표시
+        // 데이터 표시 함수
         function displayLottoData() {
             const lottoList = document.getElementById('lottoList');
             lottoList.innerHTML = '';
@@ -156,37 +141,49 @@
                         numbers: [data.drwtNo1, data.drwtNo2, data.drwtNo3, data.drwtNo4, data.drwtNo5, data.drwtNo6],
                         bnusNo: data.bnusNo
                     };
+                } else {
+                    console.log(`회차 ${drwNo}: 데이터 없음`);
+                    return null;
                 }
             } catch (error) {
-                console.error(`회차 ${drwNo} 가져오기 실패:`, error);
+                console.error(`회차 ${drwNo} 가져오기 실패:`, error.message);
+                return null;
             }
-            return null;
         }
 
-        // 모든 회차 가져오기
+        // 모든 회차 가져오기 (중복 방지)
         async function fetchAllLottoData() {
-            const latestDrwNo = 1100; // 실제 최신 회차로 수정 필요 (예: 동적으로 가져오기)
-            lottoData = []; // 기존 데이터 초기화
+            const latestDrwNo = 1100; // 임시 값, 동적으로 가져오려면 추가 로직 필요
+            const existingDrwNos = new Set(lottoData.map(d => d.drwNo)); // 기존 회차 번호 집합
+
             for (let i = 1; i <= latestDrwNo; i++) {
-                const data = await fetchLottoData(i);
-                if (data) {
-                    lottoData.push(data);
-                    console.log(`${i}회차 가져오기 완료`);
+                if (!existingDrwNos.has(i)) { // 중복되지 않은 회차만 가져오기
+                    const data = await fetchLottoData(i);
+                    if (data) {
+                        lottoData.push(data);
+                        existingDrwNos.add(i);
+                        console.log(`${i}회차 가져오기 완료`);
+                    }
                 }
-                await new Promise(resolve => setTimeout(resolve, 500)); // 서버 부하 방지
+                await new Promise(resolve => setTimeout(resolve, 1000)); // 대기 시간 증가
             }
+
+            // 회차순으로 정렬
+            lottoData.sort((a, b) => a.drwNo - b.drwNo);
             localStorage.setItem('lottoData', JSON.stringify(lottoData));
             displayLottoData();
             alert('모든 회차 데이터를 가져왔습니다!');
         }
 
-        // 최신 회차 업데이트
+        // 최신 회차 업데이트 (중복 방지 및 동적 최신 회차 확인)
         async function updateLatestLotto() {
             const latestStored = lottoData.length > 0 ? Math.max(...lottoData.map(d => d.drwNo)) : 0;
-            const latestDrwNo = latestStored + 1;
-            const newData = await fetchLottoData(latestDrwNo);
+            let latestDrwNo = latestStored + 1;
+            let newData = await fetchLottoData(latestDrwNo);
+
             if (newData && !lottoData.some(d => d.drwNo === newData.drwNo)) {
                 lottoData.push(newData);
+                lottoData.sort((a, b) => a.drwNo - b.drwNo); // 정렬 유지
                 localStorage.setItem('lottoData', JSON.stringify(lottoData));
                 displayLottoData();
                 alert(`${latestDrwNo}회차가 업데이트되었습니다!`);
