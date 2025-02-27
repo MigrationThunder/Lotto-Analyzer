@@ -8,7 +8,7 @@
     <style>
         body {
             background: linear-gradient(135deg, #0d0d1b 0%, #1f2a44 100%);
-            color: #000;
+            color: #e0e0e0;
             font-family: 'Orbitron', sans-serif;
             margin: 0;
             padding: 0;
@@ -206,7 +206,7 @@
         </div>
     </div>
     <div class="ticker">
-        <span>Data-Driven Lotto Analysis - Powered by Mr.Dong - Cyberpunk Edition</span>
+        <span>Data-Driven Lotto Analysis - Powered by xAI - Cyberpunk Edition</span>
     </div>
 
     <script>
@@ -634,7 +634,7 @@
             });
         }
 
-        // 봇 추천 함수 (로딩 바 포함)
+        // 봇 추천 함수 (로딩 바 포함, 10개 로또 세트)
         function botRecommend() {
             const botOutput = document.getElementById('botOutput');
             const loadingBar = document.getElementById('loadingBar');
@@ -662,24 +662,14 @@
                 const totalFreq = frequency.reduce((a, b) => a + b, 0);
                 const weights = frequency.map(f => f / totalFreq);
 
-                const simCount = 500;
-                const simFreq = Array(45).fill(0);
-                for (let i = 0; i < simCount; i++) {
-                    const simNumbers = weightedRandomSample(weights, 6);
-                    simNumbers.forEach(num => simFreq[num - 1]++);
-                }
-
-                const recommended = simFreq
-                    .map((freq, idx) => ({ num: idx + 1, freq }))
-                    .sort((a, b) => b.freq - a.freq)
-                    .slice(0, 6)
-                    .map(item => item.num);
-
                 botOutput.innerHTML = '';
-                const div = document.createElement('div');
-                div.className = 'recommendation';
-                div.textContent = `Bot Recommendation (${new Date().toLocaleTimeString()}): ${recommended.join(', ')}`;
-                botOutput.appendChild(div);
+                for (let set = 1; set <= 10; set++) {
+                    const recommended = weightedRandomSample(weights, 6).sort((a, b) => a - b); // 6개 번호 세트
+                    const div = document.createElement('div');
+                    div.className = 'recommendation';
+                    div.textContent = `Set ${set}: ${recommended.join(', ')}`;
+                    botOutput.appendChild(div);
+                }
 
                 // 로딩 바 숨기기
                 loadingBar.style.display = 'none';
