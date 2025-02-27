@@ -209,34 +209,33 @@
             return null;
         }
 
-        // 최신 회차 번호 동적 확인 (최대 1200까지 탐색)
+        // 최신 회차 번호 동적 확인
         async function getLatestDrwNo() {
-            let maxDrwNo = 1200; // 2025년 기준 충분히 넉넉한 값
+            const maxDrwNo = 1200; // 충분히 넉넉한 최대값
             let latestDrwNo = 0;
-            let step = 50; // 큰 간격으로 빠르게 탐색
 
-            // 최신 회차 대략적 탐색
-            for (let i = maxDrwNo; i >= 1100; i -= step) {
+            // 저장된 데이터에서 최신 회차 확인
+            const latestStored = lottoData.length > 0 ? Math.max(...lottoData.map(d => d.drwNo)) : 0;
+            let start = latestStored > 0 ? latestStored : 1000; // 저장된 데이터 있으면 거기서 시작
+
+            // 최신 회차 탐색
+            for (let i = start; i <= maxDrwNo; i += 10) {
                 const data = await fetchLottoData(i);
                 if (data) {
                     latestDrwNo = i;
+                } else {
+                    // 데이터 없는 회차 만나면 이전까지가 최신
+                    for (let j = i - 1; j >= start; j--) {
+                        const lastData = await fetchLottoData(j);
+                        if (lastData) {
+                            return j; // 정확한 최신 회차 반환
+                        }
+                    }
                     break;
                 }
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
-
-            // 정확한 최신 회차 찾기
-            if (latestDrwNo > 0) {
-                for (let i = latestDrwNo; i <= maxDrwNo; i++) {
-                    const data = await fetchLottoData(i + 1);
-                    if (!data) {
-                        return i; // 다음 회차가 없으면 현재 회차가 최신
-                    }
-                    latestDrwNo = i + 1;
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-            }
-            return latestDrwNo > 0 ? latestDrwNo : 1100; // 기본값
+            return latestDrwNo > 0 ? latestDrwNo : start; // 최소값 반환
         }
 
         // 모든 회차 가져오기
@@ -276,31 +275,28 @@
             alert(`모든 회차 데이터를 가져왔습니다! (최신: ${latestDrwNo}회차)`);
         }
 
-        // 최신 회차 업데이트 (1101~최신까지 모두 가져오기)
+        // 최신 회차 업데이트 (없는 회차까지 탐색)
         async function updateLatestLotto() {
             const latestStored = lottoData.length > 0 ? Math.max(...lottoData.map(d => d.drwNo)) : 0;
-            const latestDrwNo = await getLatestDrwNo();
-            if (latestStored >= latestDrwNo) {
-                alert('이미 최신 데이터입니다.');
-                return;
-            }
-
+            const maxDrwNo = 1200; // 탐색 최대 범위
             const existingDrwNos = new Set(lottoData.map(d => d.drwNo));
             let failedAttempts = 0;
             const maxAttempts = 5;
+            let latestFound = latestStored;
 
-            for (let i = latestStored + 1; i <= latestDrwNo; i++) {
+            for (let i = latestStored + 1; i <= maxDrwNo; i++) {
                 if (!existingDrwNos.has(i)) {
                     const data = await fetchLottoData(i);
                     if (data) {
                         lottoData.push(data);
                         existingDrwNos.add(i);
+                        latestFound = i;
                         console.log(`${i}회차 업데이트 완료`);
                         failedAttempts = 0;
                     } else {
                         failedAttempts++;
                         if (failedAttempts >= maxAttempts) {
-                            alert(`연속 ${maxAttempts}회 실패로 중단. ${i-1}회차까지 업데이트했습니다.`);
+                            console.log(`연속 ${maxAttempts}회 실패, ${i-1}회차가 최신으로 간주됨`);
                             break;
                         }
                     }
@@ -311,7 +307,7 @@
             lottoData.sort((a, b) => a.drwNo - b.drwNo);
             localStorage.setItem('lottoData', JSON.stringify(lottoData));
             displayLottoData();
-            alert(`최신 회차(${latestDrwNo})까지 업데이트되었습니다!`);
+            alert(`최신 회차(${latestFound})까지 업데이트되었습니다!`);
         }
 
         // 페이지 로드 시 데이터 표시
