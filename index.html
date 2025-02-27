@@ -17,8 +17,6 @@
             align-items: center;
             overflow-x: hidden;
         }
-
-        /* 컨테이너 스타일 */
         .container {
             background: rgba(20, 20, 40, 0.8);
             backdrop-filter: blur(20px);
@@ -30,8 +28,6 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             animation: fadeInUp 1s ease-out;
         }
-
-        /* 타이틀 스타일 */
         h1 {
             font-size: 3em;
             font-weight: 800;
@@ -43,8 +39,6 @@
             letter-spacing: 2px;
             animation: glow 2s infinite alternate;
         }
-
-        /* 버튼 스타일 */
         .button-group {
             display: flex;
             justify-content: center;
@@ -84,8 +78,6 @@
             transform: translateY(-5px);
             box-shadow: 0 8px 20px rgba(255, 0, 204, 0.6);
         }
-
-        /* 로또 데이터 리스트 */
         #lottoList {
             margin-top: 20px;
             max-height: 600px;
@@ -108,8 +100,6 @@
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(0, 255, 204, 0.2);
         }
-
-        /* 스크롤바 스타일 */
         #lottoList::-webkit-scrollbar {
             width: 10px;
         }
@@ -120,8 +110,6 @@
         #lottoList::-webkit-scrollbar-track {
             background: rgba(255, 255, 255, 0.1);
         }
-
-        /* 애니메이션 정의 */
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(50px); }
             to { opacity: 1; transform: translateY(0); }
@@ -134,8 +122,6 @@
             from { text-shadow: 0 0 10px #00f7ff, 0 0 20px #ff00cc; }
             to { text-shadow: 0 0 20px #00f7ff, 0 0 30px #ff00cc; }
         }
-
-        /* 반응형 디자인 */
         @media (max-width: 600px) {
             h1 { font-size: 2.2em; }
             .container { padding: 20px; }
@@ -156,15 +142,18 @@
 
     <script>
         // 로컬 스토리지에서 데이터 로드 (안전하게 배열 보장)
-        let lottoData;
+        let lottoData = [];
         try {
             const storedData = localStorage.getItem('lottoData');
-            lottoData = storedData ? JSON.parse(storedData) : [];
-            if (!Array.isArray(lottoData)) throw new Error('lottoData is not an array');
+            if (storedData) {
+                const parsedData = JSON.parse(storedData);
+                // 배열인지 확인하고, 아니면 빈 배열로 초기화
+                lottoData = Array.isArray(parsedData) ? parsedData : [];
+            }
         } catch (error) {
-            console.error('로컬 스토리지 데이터 로드 실패:', error);
-            lottoData = [];
-            localStorage.setItem('lottoData', JSON.stringify(lottoData));
+            console.error('로컬 스토리지 데이터 로드 실패:', error.message);
+            lottoData = []; // 오류 시 빈 배열로 초기화
+            localStorage.setItem('lottoData', JSON.stringify(lottoData)); // 손상된 데이터 덮어쓰기
         }
 
         // 데이터 표시 함수
