@@ -116,6 +116,19 @@
             max-width: 100%;
             margin: 20px 0;
         }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        th {
+            background: rgba(255, 0, 204, 0.3);
+        }
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(50px); }
             to { opacity: 1; transform: translateY(0); }
@@ -133,6 +146,7 @@
             .container { padding: 20px; }
             button { padding: 12px 20px; font-size: 0.9em; }
             .lotto-entry { font-size: 0.9em; padding: 15px; }
+            th, td { font-size: 0.8em; padding: 8px; }
         }
     </style>
 </head>
@@ -151,6 +165,7 @@
             <button onclick="analyzeConsecutive()">연속 숫자 분석</button>
             <button onclick="recommendNumbers()">기본 추천 번호</button>
             <button onclick="advancedAnalysis()">고급 분석 및 추천</button>
+            <button onclick="compareStrategies()">전략 비교</button>
             <button onclick="displayLottoData()">목록으로 돌아가기</button>
         </div>
         <div id="lottoList"></div>
@@ -519,7 +534,6 @@
                 return;
             }
 
-            // 1. 빈도수 계산 (가중치로 사용)
             const frequency = Array(45).fill(0);
             lottoData.forEach(entry => {
                 entry.numbers.forEach(num => frequency[num - 1]++);
@@ -527,7 +541,6 @@
             const totalFreq = frequency.reduce((a, b) => a + b, 0);
             const weights = frequency.map(f => f / totalFreq);
 
-            // 2. 몬테카를로 시뮬레이션 (1000번 가상 추첨)
             const simCount = 1000;
             const simFreq = Array(45).fill(0);
             for (let i = 0; i < simCount; i++) {
@@ -535,7 +548,6 @@
                 simNumbers.forEach(num => simFreq[num - 1]++);
             }
 
-            // 3. 클러스터링 (간단한 K-평균, 3개 클러스터)
             const clusters = simpleKMeans(3);
             const clusterFreq = clusters.map(cluster => {
                 const freq = Array(45).fill(0);
@@ -543,7 +555,6 @@
                 return freq;
             });
 
-            // 4. 추천 번호 도출 (시뮬레이션 + 클러스터링 결합)
             const combinedFreq = simFreq.map((f, i) => f + clusterFreq.reduce((sum, cf) => sum + cf[i], 0));
             const topNumbers = combinedFreq
                 .map((freq, idx) => ({ num: idx + 1, freq }))
@@ -551,13 +562,11 @@
                 .slice(0, 10)
                 .map(item => item.num);
 
-            // 5. 결과 표시
             const div = document.createElement('div');
             div.className = 'lotto-entry';
             div.textContent = `고급 분석 추천 번호 (상위 10개): ${topNumbers.join(', ')}`;
             lottoList.appendChild(div);
 
-            // 6. 시뮬레이션 빈도수 차트
             const canvas = document.createElement('canvas');
             lottoList.appendChild(canvas);
             currentChart = new Chart(canvas, {
@@ -574,6 +583,143 @@
                 },
                 options: { indexAxis: 'y', scales: { x: { beginAtZero: true } } }
             });
+        }
+
+        // 로또 전략 비교 함수
+        function compareStrategies() {
+            const lottoList = document.getElementById('lottoList');
+            lottoList.innerHTML = '<p>다양한 로또 전략을 비교합니다. 각 전략별 6개 번호 추천.</p>';
+            if (currentChart) currentChart.destroy();
+
+            if (lottoData.length === 0) {
+                lottoList.textContent = '분석을 위해 데이터가 필요합니다. 먼저 데이터를 가져오세요.';
+                return;
+            }
+
+            // 빈도수 계산
+            const frequency = Array(45).fill(0);
+            lottoData.forEach(entry => {
+                entry.numbers.forEach(num => frequency[num - 1]++);
+            });
+            const totalFreq = frequency.reduce((a, b) => a + b, 0);
+            const weights = frequency.map(f => f / totalFreq);
+
+            // 전략별 번호 생성
+            const strategies = {
+                'Hot Numbers': hotNumbers(frequency),
+                'Cold Numbers': coldNumbers(frequency),
+                'Pure Random': pureRandom(),
+                'Monte Carlo': monteCarlo(weights),
+                'Clustering': clusteringNumbers(),
+                'Balanced Mix': balancedMix()
+            };
+
+            // 결과 테이블 생성
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+            const headerRow = document.createElement('tr');
+            ['전략', '추천 번호', '합계'].forEach(text => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+
+            Object.entries(strategies).forEach(([name, numbers]) => {
+                const tr = document.createElement('tr');
+                const nameTd = document.createElement('td');
+                const numbersTd = document.createElement('td');
+                const sumTd = document.createElement('td');
+                nameTd.textContent = name;
+                numbersTd.textContent = numbers.join(', ');
+                sumTd.textContent = numbers.reduce((a, b) => a + b, 0);
+                tr.appendChild(nameTd);
+                tr.appendChild(numbersTd);
+                tr.appendChild(sumTd);
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            lottoList.appendChild(table);
+
+            // 합계 비교 차트
+            const canvas = document.createElement('canvas');
+            lottoList.appendChild(canvas);
+            currentChart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(strategies),
+                    datasets: [{
+                        label: '번호 합계',
+                        data: Object.values(strategies).map(nums => nums.reduce((a, b) => a + b, 0)),
+                        backgroundColor: 'rgba(0, 255, 204, 0.6)',
+                        borderColor: 'rgba(0, 255, 204, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        // 전략별 번호 생성 함수
+        function hotNumbers(frequency) {
+            return frequency.map((freq, idx) => ({ num: idx + 1, freq }))
+                .sort((a, b) => b.freq - a.freq)
+                .slice(0, 6)
+                .map(item => item.num);
+        }
+
+        function coldNumbers(frequency) {
+            return frequency.map((freq, idx) => ({ num: idx + 1, freq }))
+                .sort((a, b) => a.freq - b.freq)
+                .slice(0, 6)
+                .map(item => item.num);
+        }
+
+        function pureRandom() {
+            const numbers = new Set();
+            while (numbers.size < 6) {
+                numbers.add(Math.floor(Math.random() * 45) + 1);
+            }
+            return Array.from(numbers).sort((a, b) => a - b);
+        }
+
+        function monteCarlo(weights) {
+            return weightedRandomSample(weights, 6).sort((a, b) => a - b);
+        }
+
+        function clusteringNumbers() {
+            const clusters = simpleKMeans(3);
+            const clusterFreq = Array(45).fill(0);
+            clusters.forEach(cluster => {
+                cluster.forEach(nums => nums.forEach(num => clusterFreq[num - 1]++));
+            });
+            return clusterFreq.map((freq, idx) => ({ num: idx + 1, freq }))
+                .sort((a, b) => b.freq - a.freq)
+                .slice(0, 6)
+                .map(item => item.num);
+        }
+
+        function balancedMix() {
+            const numbers = [];
+            const ranges = [[1, 15], [16, 30], [31, 45]];
+            const evenOdd = [2, 4]; // 2짝수 4홀수 예시
+            ranges.forEach(([min, max]) => {
+                for (let i = 0; i < 2; i++) {
+                    let num;
+                    do {
+                        num = Math.floor(Math.random() * (max - min + 1)) + min;
+                    } while (numbers.includes(num));
+                    numbers.push(num);
+                }
+            });
+            while (numbers.length < 6) {
+                const num = Math.floor(Math.random() * 45) + 1;
+                if (!numbers.includes(num)) numbers.push(num);
+            }
+            return numbers.sort((a, b) => a - b);
         }
 
         // 가중치 기반 랜덤 샘플링 함수
@@ -596,7 +742,7 @@
         // 간단한 K-평균 클러스터링
         function simpleKMeans(k) {
             const data = lottoData.map(entry => entry.numbers);
-            if (data.length < k) return [data]; // 데이터 부족 시 단일 클러스터 반환
+            if (data.length < k) return [data];
             const centroids = data.slice(0, k);
             for (let iter = 0; iter < 10; iter++) {
                 const clusters = Array(k).fill().map(() => []);
@@ -611,7 +757,7 @@
                     }
                 });
             }
-            return clusters.filter(c => c.length > 0); // 빈 클러스터 제거
+            return clusters.filter(c => c.length > 0);
         }
 
         function euclideanDistance(a, b) {
