@@ -143,9 +143,9 @@
             });
         }
 
-        // API 호출 함수 (CORS 우회 필요 시 프록시 사용)
+        // API 호출 함수 (CORS 우회용 프록시 적용)
         async function fetchLottoData(drwNo) {
-            const url = `https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo=${drwNo}`;
+            const url = `https://cors-anywhere.herokuapp.com/https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo=${drwNo}`;
             try {
                 const response = await fetch(url);
                 const data = await response.json();
@@ -165,8 +165,8 @@
 
         // 모든 회차 가져오기
         async function fetchAllLottoData() {
-            const latestDrwNo = 1100; // 실제 최신 회차로 수정 필요
-            lottoData = []; // 초기화
+            const latestDrwNo = 1100; // 실제 최신 회차로 수정 필요 (예: 동적으로 가져오기)
+            lottoData = []; // 기존 데이터 초기화
             for (let i = 1; i <= latestDrwNo; i++) {
                 const data = await fetchLottoData(i);
                 if (data) {
