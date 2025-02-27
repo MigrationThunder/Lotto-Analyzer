@@ -3,272 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Future Lotto Bot</title>
+    <title>미래지향적 로또 분석기</title>
     <style>
-        * {
+        /* 현대적인 전체 스타일 */
+        body {
+            background: linear-gradient(135deg, #1e1e2f 0%, #2a4066 100%);
+            color: #ffffff;
+            font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
-            color: #00ffcc;
-            font-family: 'Orbitron', sans-serif;
             min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        header h1 {
-            font-size: clamp(1.5rem, 4vw, 2.5rem);
-            text-shadow: 0 0 10px #00ffcc;
-        }
-        main {
-            max-width: 1200px;
-            width: 100%;
-        }
-        section {
-            margin-bottom: 20px;
-            width: 100%;
-        }
-        #status, #results, #chart-container {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
-        }
-        #status p {
-            font-size: 1.1rem;
-            text-align: center;
-        }
-        #controls {
             display: flex;
             justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
+            align-items: center;
+            overflow-x: hidden;
         }
+
+        /* 제목 스타일 */
+        h1 {
+            font-size: 2.8em;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00ddeb, #ff007a);
+            -webkit-background-clip: text;
+            color: transparent;
+            text-align: center;
+            margin-bottom: 20px;
+            animation: slideIn 1s ease-out;
+        }
+
+        /* 컨테이너 (유리 효과) */
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 900px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: fadeInUp 1s ease-out;
+        }
+
+        /* 버튼 스타일 */
         button {
-            background: #ff007a;
+            background: linear-gradient(45deg, #00ddeb, #ff007a);
             border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
+            padding: 12px 25px;
+            margin: 10px;
+            border-radius: 50px;
             color: #fff;
-            font-size: 1rem;
+            font-size: 1em;
+            font-weight: 600;
             cursor: pointer;
             transition: transform 0.3s, box-shadow 0.3s;
-            width: clamp(150px, 40%, 300px);
         }
         button:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 20px #ff007a;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255, 0, 122, 0.5);
         }
-        #results p {
-            font-size: 1rem;
-            text-shadow: 0 0 5px #00ffcc;
-            margin: 5px 0;
-            text-align: center;
-        }
-        #chart-container {
-            width: 100%;
-            max-width: 800px;
-            margin: 20px auto;
-        }
-        footer {
-            text-align: center;
+
+        /* 로또 데이터 리스트 */
+        #lottoList {
             margin-top: 20px;
-            font-size: 0.9rem;
-            color: #888;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
         }
-        @media (max-width: 768px) {
-            #controls {
-                flex-direction: column;
-                align-items: center;
-            }
-            button {
-                width: 80%;
-                max-width: 250px;
-            }
-            #chart-container {
-                max-width: 100%;
-            }
+        .lotto-entry {
+            padding: 15px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            font-size: 1em;
+            transition: transform 0.2s;
+            animation: slideInLeft 0.5s ease-out;
+        }
+        .lotto-entry:hover {
+            transform: scale(1.02);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* 스크롤바 커스터마이징 */
+        #lottoList::-webkit-scrollbar {
+            width: 8px;
+        }
+        #lottoList::-webkit-scrollbar-thumb {
+            background: #ff007a;
+            border-radius: 10px;
+        }
+        #lottoList::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 애니메이션 정의 */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 600px) {
+            h1 { font-size: 2em; }
+            .container { padding: 20px; }
+            button { padding: 10px 20px; font-size: 0.9em; }
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Future Lotto Bot</h1>
-    </header>
-    <main>
-        <section id="status">
-            <p>상태: 데이터 로드 완료! 총 1160 회차</p>
-        </section>
-        <section id="controls">
-            <button id="generate-btn">번호 10개 생성</button>
-            <button id="load-latest-btn">최신 회차 불러오기</button>
-        </section>
-        <section id="results">
-            <p>생성된 번호가 여기에 표시됩니다.</p>
-        </section>
-        <section id="chart-container">
-            <canvas id="freq-chart"></canvas>
-        </section>
-    </main>
-    <footer>Powered by xAI | 2025</footer>
+    <div class="container">
+        <h1>미래지향적 로또 분석기</h1>
+        <button onclick="fetchAllLottoData()">모든 회차 가져오기</button>
+        <button onclick="updateLatestLotto()">최신 회차 업데이트</button>
+        <div id="lottoList"></div>
+    </div>
 
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Google Fonts: Orbitron -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <script>
-        // 1회차부터 1160회차까지 실제 데이터 (일부만 예시, 전체는 별도 수집 필요)
-        const lottoData = {
-            1: [10, 23, 29, 33, 37, 40],
-            2: [9, 13, 21, 25, 32, 42],
-            3: [11, 16, 19, 21, 27, 31],
-            4: [14, 27, 30, 31, 40, 42],
-            5: [16, 24, 29, 40, 41, 42],
-            // ... (6회차부터 1155회차까지 실제 데이터 필요, 여기선 생략)
-            1156: [8, 13, 19, 27, 40, 42],
-            1157: [3, 8, 15, 27, 29, 35],
-            1158: [3, 12, 19, 25, 38, 41],
-            1159: [1, 8, 15, 27, 33, 42],
-            1160: [7, 13, 18, 36, 39, 45]
-        };
+        // 로컬 스토리지에서 데이터 관리
+        let lottoData = JSON.parse(localStorage.getItem('lottoData')) || [];
 
-        // localStorage에서 데이터 로드, 없으면 초기 데이터로 설정
-        let storedData = JSON.parse(localStorage.getItem('lottoData')) || lottoData;
-        for (let draw in lottoData) {
-            storedData[draw] = lottoData[draw]; // 중복 제거 및 초기 데이터 병합
-        }
-        let lottoDataCurrent = storedData;
-
-        const status = document.getElementById('status');
-        const generateBtn = document.getElementById('generate-btn');
-        const loadLatestBtn = document.getElementById('load-latest-btn');
-        const results = document.getElementById('results');
-
-        // 데이터 저장 함수
-        function saveLottoData() {
-            localStorage.setItem('lottoData', JSON.stringify(lottoDataCurrent));
-        }
-
-        // 최신 회차 불러오기 (시뮬레이션, 실제 데이터는 별도 수집 필요)
-        async function loadLatestDraw() {
-            const latestKnownDraw = Math.max(...Object.keys(lottoDataCurrent).map(Number)) || 1159;
-            const latestDraw = 1160; // 최신 회차 고정 (2025-02-27 기준)
-            if (latestKnownDraw < latestDraw) {
-                lottoDataCurrent[latestDraw] = [7, 13, 18, 36, 39, 45]; // 1160회 실제 데이터
-                saveLottoData();
-                status.innerHTML = `<p>상태: 최신 회차 업데이트 완료! 총 ${Object.keys(lottoDataCurrent).length} 회차</p>`;
-                updateChart();
-            } else {
-                status.innerHTML = `<p>상태: 이미 최신 회차까지 로드됨! 총 ${Object.keys(lottoDataCurrent).length} 회차</p>`;
-            }
-        }
-
-        // 빈도 분석
-        function frequencyAnalysis() {
-            let numberCount = Array(45).fill(0);
-            for (let draw in lottoDataCurrent) {
-                if (Array.isArray(lottoDataCurrent[draw])) {
-                    lottoDataCurrent[draw].forEach(num => numberCount[num - 1]++);
-                }
-            }
-            return numberCount.map((count, idx) => ({ number: idx + 1, count }))
-                .sort((a, b) => b.count - a.count);
-        }
-
-        // 홀짝 균형
-        function oddEvenBalance(numbers) {
-            let odds = numbers.filter(n => n % 2 === 1).length;
-            return { odds, evens: 6 - odds };
-        }
-
-        // 높낮이 균형
-        function highLowBalance(numbers) {
-            let lows = numbers.filter(n => n <= 22).length;
-            return { lows, highs: 6 - lows };
-        }
-
-        // 숫자 합계
-        function sumNumbers(numbers) {
-            return numbers.reduce((sum, num) => sum + num, 0);
-        }
-
-        // 번호 생성
-        function generateLottoNumbers() {
-            const freqAnalysis = frequencyAnalysis();
-            const topNumbers = freqAnalysis.slice(0, 10).map(n => n.number);
-            let recommendations = [];
-
-            while (recommendations.length < 10) {
-                let set = new Set();
-                for (let i = 0; i < 3; i++) {
-                    set.add(topNumbers[Math.floor(Math.random() * 10)]);
-                }
-                while (set.size < 6) {
-                    set.add(Math.floor(Math.random() * 45) + 1);
-                }
-                let numbers = Array.from(set).sort((a, b) => a - b);
-                const { odds, evens } = oddEvenBalance(numbers);
-                const { lows, highs } = highLowBalance(numbers);
-                const sum = sumNumbers(numbers);
-                if (odds >= 2 && evens >= 2 && lows >= 2 && highs >= 2 && sum >= 106 && sum <= 170) {
-                    recommendations.push(numbers);
-                }
-            }
-            return recommendations;
-        }
-
-        // 그래프 업데이트
-        let chart;
-        function updateChart() {
-            const freqAnalysis = frequencyAnalysis().slice(0, 20);
-            const labels = freqAnalysis.map(n => n.number);
-            const data = freqAnalysis.map(n => n.count);
-
-            if (chart) chart.destroy();
-            chart = new Chart(document.getElementById('freq-chart'), {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '숫자 빈도 (상위 20)',
-                        data: data,
-                        backgroundColor: 'rgba(0, 255, 204, 0.7)',
-                        borderColor: '#00ffcc',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: { beginAtZero: true, ticks: { color: '#00ffcc' } },
-                        x: { ticks: { color: '#00ffcc' } }
-                    },
-                    plugins: {
-                        legend: { labels: { color: '#00ffcc' } }
-                    }
-                }
+        // 화면에 데이터 표시
+        function displayLottoData() {
+            const lottoList = document.getElementById('lottoList');
+            lottoList.innerHTML = '';
+            lottoData.forEach(entry => {
+                const div = document.createElement('div');
+                div.className = 'lotto-entry';
+                div.textContent = `${entry.drwNo}회차 (${entry.drwNoDate}): ${entry.numbers.join(', ')} (보너스: ${entry.bnusNo})`;
+                lottoList.appendChild(div);
             });
         }
 
-        // 이벤트 리스너
-        generateBtn.addEventListener('click', () => {
-            const numbers = generateLottoNumbers();
-            results.innerHTML = numbers.map((set, idx) => 
-                `<p>${idx + 1}: ${set.join(', ')}</p>`).join('');
-        });
-        loadLatestBtn.addEventListener('click', loadLatestDraw);
+        // API 호출 함수 (CORS 우회 필요 시 프록시 사용)
+        async function fetchLottoData(drwNo) {
+            const url = `https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo=${drwNo}`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.returnValue === 'success') {
+                    return {
+                        drwNo: data.drwNo,
+                        drwNoDate: data.drwNoDate,
+                        numbers: [data.drwtNo1, data.drwtNo2, data.drwtNo3, data.drwtNo4, data.drwtNo5, data.drwtNo6],
+                        bnusNo: data.bnusNo
+                    };
+                }
+            } catch (error) {
+                console.error(`회차 ${drwNo} 가져오기 실패:`, error);
+            }
+            return null;
+        }
 
-        // 초기 상태
-        status.innerHTML = `<p>상태: 데이터 로드 완료! 총 ${Object.keys(lottoDataCurrent).length} 회차</p>`;
-        updateChart();
+        // 모든 회차 가져오기
+        async function fetchAllLottoData() {
+            const latestDrwNo = 1100; // 실제 최신 회차로 수정 필요
+            lottoData = []; // 초기화
+            for (let i = 1; i <= latestDrwNo; i++) {
+                const data = await fetchLottoData(i);
+                if (data) {
+                    lottoData.push(data);
+                    console.log(`${i}회차 가져오기 완료`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 500)); // 서버 부하 방지
+            }
+            localStorage.setItem('lottoData', JSON.stringify(lottoData));
+            displayLottoData();
+            alert('모든 회차 데이터를 가져왔습니다!');
+        }
+
+        // 최신 회차 업데이트
+        async function updateLatestLotto() {
+            const latestStored = lottoData.length > 0 ? Math.max(...lottoData.map(d => d.drwNo)) : 0;
+            const latestDrwNo = latestStored + 1;
+            const newData = await fetchLottoData(latestDrwNo);
+            if (newData && !lottoData.some(d => d.drwNo === newData.drwNo)) {
+                lottoData.push(newData);
+                localStorage.setItem('lottoData', JSON.stringify(lottoData));
+                displayLottoData();
+                alert(`${latestDrwNo}회차가 업데이트되었습니다!`);
+            } else {
+                alert('이미 최신 데이터이거나 가져올 수 없습니다.');
+            }
+        }
+
+        // 페이지 로드 시 저장된 데이터 표시
+        window.onload = displayLottoData;
     </script>
 </body>
 </html>
