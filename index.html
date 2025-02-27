@@ -635,7 +635,7 @@
             });
         }
 
-        // 봇 추천 함수 (정교한 분석, 10개 로또 세트)
+        // 봇 추천 함수 (정교한 분석, 10개 로또 세트 + 보너스 번호, 시각화 포함)
         function botRecommend() {
             const botOutput = document.getElementById('botOutput');
             const loadingBar = document.getElementById('loadingBar');
@@ -647,7 +647,7 @@
             }
 
             // 로딩 바 표시
-            botOutput.innerHTML = '<p>Analyzing with Advanced Algorithm...</p>';
+            botOutput.innerHTML = '<p>Analyzing with Enhanced Algorithm...</p>';
             loadingBar.style.display = 'block';
             loadingProgress.style.width = '0';
 
@@ -665,42 +665,74 @@
 
                 // 과거 데이터 패턴 분석
                 const pastSums = lottoData.map(entry => entry.numbers.reduce((a, b) => a + b, 0));
-                const avgSum = pastSums.reduce((a, b) => a + b, 0) / pastSums.length; // 평균 합계
-                const pastEvenOdd = lottoData.map(entry => ({
-                    even: entry.numbers.filter(n => n % 2 === 0).length,
-                    odd: entry.numbers.filter(n => n % 2 !== 0).length
-                }));
+                const avgSum = pastSums.reduce((a, b) => a + b, 0) / pastSums.length;
+                const sumRange = lottoData.length < 50 ? [80, 200] : [100, 180]; // 데이터 부족 시 범위 확장
 
                 botOutput.innerHTML = '';
                 const recommendedSets = new Set(); // 중복 방지
+                const allNumbersFreq = Array(45).fill(0); // 시각화용 빈도
                 let attempts = 0;
 
-                while (recommendedSets.size < 10 && attempts < 50) { // 최대 50번 시도
-                    const candidate = weightedRandomSample(weights, 6).sort((a, b) => a - b);
-                    const sum = candidate.reduce((a, b) => a + b, 0);
-                    const evenCount = candidate.filter(n => n % 2 === 0).length;
+                while (recommendedSets.size < 10 && attempts < 100) { // 최대 100번 시도
+                    const candidate = weightedRandomSample(weights, 7); // 6개 + 보너스 1개
+                    const mainNumbers = candidate.slice(0, 6).sort((a, b) => a - b);
+                    const bonusNumber = candidate[6];
+                    const sum = mainNumbers.reduce((a, b) => a + b, 0);
+                    const evenCount = mainNumbers.filter(n => n % 2 === 0).length;
                     const oddCount = 6 - evenCount;
-                    const consecutive = countConsecutive(candidate);
+                    const consecutive = countConsecutive(mainNumbers);
+                    const ranges = countRanges(mainNumbers);
 
-                    // 필터링 조건: 합계 100~180, 짝수/홀수 2:4~4:2, 연속 번호 0~2
-                    if (sum >= 100 && sum <= 180 && 
+                    // 필터링 조건: 합계, 짝수/홀수, 연속 번호, 범위 균형
+                    if (sum >= sumRange[0] && sum <= sumRange[1] && 
                         evenCount >= 2 && evenCount <= 4 && 
-                        consecutive <= 2) {
-                        const setString = candidate.join(',');
+                        consecutive <= 2 && 
+                        ranges.low >= 1 && ranges.mid >= 1 && ranges.high >= 1) {
+                        const setString = mainNumbers.join(',');
                         if (!recommendedSets.has(setString)) {
                             recommendedSets.add(setString);
                             const div = document.createElement('div');
                             div.className = 'recommendation';
-                            div.textContent = `Set ${recommendedSets.size}: ${candidate.join(', ')} (Sum: ${sum}, Even:Odd = ${evenCount}:${oddCount}, Consecutive: ${consecutive})`;
+                            div.textContent = `Set ${recommendedSets.size}: ${mainNumbers.join(', ')} (Bonus: ${bonusNumber}, Sum: ${sum}, Even:Odd = ${evenCount}:${oddCount}, Consecutive: ${consecutive})`;
                             botOutput.appendChild(div);
+                            mainNumbers.forEach(num => allNumbersFreq[num - 1]++); // 빈도 기록
                         }
                     }
                     attempts++;
                 }
 
                 if (recommendedSets.size < 10) {
-                    botOutput.innerHTML += '<p>Warning: Could not generate 10 unique sets meeting criteria.</p>';
+                    botOutput.innerHTML += '<p>Warning: Could not generate 10 unique sets. Adding random sets...</p>';
+                    while (recommendedSets.size < 10) {
+                        const fallback = pureRandom();
+                        const setString = fallback.join(',');
+                        if (!recommendedSets.has(setString)) {
+                            recommendedSets.add(setString);
+                            const sum = fallback.reduce((a, b) => a + b, 0);
+                            const evenCount = fallback.filter(n => n % 2 === 0).length;
+                            const oddCount = 6 - evenCount;
+                            const consecutive = countConsecutive(fallback);
+                            const bonusNumber = Math.floor(Math.random() * 45) + 1;
+                            const div = document.createElement('div');
+                            div.className = 'recommendation';
+                            div.textContent = `Set ${recommendedSets.size} (Fallback): ${fallback.join(', ')} (Bonus: ${bonusNumber}, Sum: ${sum}, Even:Odd = ${evenCount}:${oddCount}, Consecutive: ${consecutive})`;
+                            botOutput.appendChild(div);
+                            fallback.forEach(num => allNumbersFreq[num - 1]++);
+                        }
+                    }
                 }
+
+                // 추천 번호 빈도 시각화
+                const canvas = document.createElement('canvas');
+                botOutput.appendChild(canvas);
+                new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels: Array.from({ length: 45 }, (_, i) => i + 1),
+                        datasets: [{ label: 'Recommended Number Frequency', data: allNumbersFreq, backgroundColor: 'rgba(0, 247, 255, 0.6)', borderColor: 'rgba(0, 247, 255, 1)', borderWidth: 1 }]
+                    },
+                    options: { indexAxis: 'y', scales: { x: { beginAtZero: true } } }
+                });
 
                 // 로딩 바 숨기기
                 loadingBar.style.display = 'none';
@@ -715,6 +747,15 @@
                 if (sorted[i] - sorted[i - 1] === 1) count++;
             }
             return count;
+        }
+
+        // 범위 카운트 함수
+        function countRanges(numbers) {
+            return {
+                low: numbers.filter(n => n <= 15).length,
+                mid: numbers.filter(n => n > 15 && n <= 30).length,
+                high: numbers.filter(n => n > 30).length
+            };
         }
 
         // 전략별 번호 생성 함수
