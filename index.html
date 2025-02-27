@@ -8,7 +8,7 @@
     <style>
         body {
             background: linear-gradient(135deg, #0d0d1b 0%, #1f2a44 100%);
-            color: #000000;
+            color: #e0e0e0;
             font-family: 'Orbitron', sans-serif;
             margin: 0;
             padding: 0;
@@ -54,6 +54,7 @@
             flex-wrap: wrap;
             gap: 15px;
             justify-content: center;
+            align-items: center;
         }
         button {
             background: linear-gradient(45deg, #00f7ff, #ff00cc);
@@ -88,6 +89,15 @@
         button:hover::before {
             width: 200px;
             height: 200px;
+        }
+        select {
+            background: rgba(20, 20, 40, 0.85);
+            color: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 0, 204, 0.4);
+            font-size: 1em;
+            cursor: pointer;
         }
         #lottoList, #botRecommendations, #analysisPanel {
             max-height: 500px;
@@ -175,6 +185,7 @@
             h1 { font-size: 2em; }
             button { padding: 10px 20px; font-size: 0.9em; }
             .recommendation { font-size: 0.9em; }
+            select { font-size: 0.9em; }
         }
     </style>
 </head>
@@ -194,6 +205,11 @@
                 <button onclick="advancedAnalysis()">고급 분석</button>
                 <button onclick="compareStrategies()">전략 비교</button>
                 <button onclick="botRecommend()">로또 번호 추천</button>
+                <select id="setCount">
+                    <option value="5">5 Sets</option>
+                    <option value="10" selected>10 Sets</option>
+                    <option value="20">20 Sets</option>
+                </select>
                 <button onclick="displayLottoData()">데이터 목록</button>
             </div>
         </div>
@@ -635,11 +651,12 @@
             });
         }
 
-        // 봇 추천 함수 (정교한 분석, 10개 로또 세트 + 보너스 번호, 시각화 포함)
+        // 봇 추천 함수 (최종 개선 버전)
         function botRecommend() {
             const botOutput = document.getElementById('botOutput');
             const loadingBar = document.getElementById('loadingBar');
             const loadingProgress = document.getElementById('loadingProgress');
+            const setCount = parseInt(document.getElementById('setCount').value);
 
             if (lottoData.length === 0) {
                 botOutput.innerHTML = '<p>데이터가 필요합니다.</p>';
@@ -647,7 +664,7 @@
             }
 
             // 로딩 바 표시
-            botOutput.innerHTML = '<p>Analyzing with Enhanced Algorithm...</p>';
+            botOutput.innerHTML = '<p>Analyzing with Optimized Algorithm...</p>';
             loadingBar.style.display = 'block';
             loadingProgress.style.width = '0';
 
@@ -661,20 +678,27 @@
                 const frequency = Array(45).fill(0);
                 lottoData.forEach(entry => entry.numbers.forEach(num => frequency[num - 1]++));
                 const totalFreq = frequency.reduce((a, b) => a + b, 0);
-                const weights = frequency.map(f => f / totalFreq);
+                let weights = frequency.map(f => f / totalFreq);
+
+                // 유사도 기반 가중치 보정
+                const pastNumbers = lottoData.map(entry => entry.numbers);
+                weights = weights.map((w, i) => {
+                    const similarity = pastNumbers.reduce((sum, nums) => sum + (nums.includes(i + 1) ? 1 : 0), 0) / pastNumbers.length;
+                    return w * (1 + similarity); // 빈도수에 과거 유사도 가중
+                });
 
                 // 과거 데이터 패턴 분석
                 const pastSums = lottoData.map(entry => entry.numbers.reduce((a, b) => a + b, 0));
                 const avgSum = pastSums.reduce((a, b) => a + b, 0) / pastSums.length;
-                const sumRange = lottoData.length < 50 ? [80, 200] : [100, 180]; // 데이터 부족 시 범위 확장
+                const sumRange = lottoData.length < 50 ? [80, 200] : [100, 180];
 
                 botOutput.innerHTML = '';
-                const recommendedSets = new Set(); // 중복 방지
-                const allNumbersFreq = Array(45).fill(0); // 시각화용 빈도
+                const recommendedSets = new Set();
+                const allNumbersFreq = Array(45).fill(0);
                 let attempts = 0;
 
-                while (recommendedSets.size < 10 && attempts < 100) { // 최대 100번 시도
-                    const candidate = weightedRandomSample(weights, 7); // 6개 + 보너스 1개
+                while (recommendedSets.size < setCount && attempts < setCount * 10) {
+                    const candidate = weightedRandomSample(weights, 7);
                     const mainNumbers = candidate.slice(0, 6).sort((a, b) => a - b);
                     const bonusNumber = candidate[6];
                     const sum = mainNumbers.reduce((a, b) => a + b, 0);
@@ -682,8 +706,9 @@
                     const oddCount = 6 - evenCount;
                     const consecutive = countConsecutive(mainNumbers);
                     const ranges = countRanges(mainNumbers);
+                    const similarityScore = calculateSimilarity(mainNumbers);
 
-                    // 필터링 조건: 합계, 짝수/홀수, 연속 번호, 범위 균형
+                    // 필터링 조건
                     if (sum >= sumRange[0] && sum <= sumRange[1] && 
                         evenCount >= 2 && evenCount <= 4 && 
                         consecutive <= 2 && 
@@ -693,17 +718,17 @@
                             recommendedSets.add(setString);
                             const div = document.createElement('div');
                             div.className = 'recommendation';
-                            div.textContent = `Set ${recommendedSets.size}: ${mainNumbers.join(', ')} (Bonus: ${bonusNumber}, Sum: ${sum}, Even:Odd = ${evenCount}:${oddCount}, Consecutive: ${consecutive})`;
+                            div.textContent = `Set ${recommendedSets.size}: ${mainNumbers.join(', ')} (Bonus: ${bonusNumber}, Sum: ${sum}, Even:Odd = ${evenCount}:${oddCount}, Consecutive: ${consecutive}, Similarity: ${similarityScore})`;
                             botOutput.appendChild(div);
-                            mainNumbers.forEach(num => allNumbersFreq[num - 1]++); // 빈도 기록
+                            mainNumbers.forEach(num => allNumbersFreq[num - 1]++);
                         }
                     }
                     attempts++;
                 }
 
-                if (recommendedSets.size < 10) {
-                    botOutput.innerHTML += '<p>Warning: Could not generate 10 unique sets. Adding random sets...</p>';
-                    while (recommendedSets.size < 10) {
+                if (recommendedSets.size < setCount) {
+                    botOutput.innerHTML += `<p>Warning: Could not generate ${setCount} unique sets. Adding random sets...</p>`;
+                    while (recommendedSets.size < setCount) {
                         const fallback = pureRandom();
                         const setString = fallback.join(',');
                         if (!recommendedSets.has(setString)) {
@@ -713,9 +738,10 @@
                             const oddCount = 6 - evenCount;
                             const consecutive = countConsecutive(fallback);
                             const bonusNumber = Math.floor(Math.random() * 45) + 1;
+                            const similarityScore = calculateSimilarity(fallback);
                             const div = document.createElement('div');
                             div.className = 'recommendation';
-                            div.textContent = `Set ${recommendedSets.size} (Fallback): ${fallback.join(', ')} (Bonus: ${bonusNumber}, Sum: ${sum}, Even:Odd = ${evenCount}:${oddCount}, Consecutive: ${consecutive})`;
+                            div.textContent = `Set ${recommendedSets.size} (Fallback): ${fallback.join(', ')} (Bonus: ${bonusNumber}, Sum: ${sum}, Even:Odd = ${evenCount}:${oddCount}, Consecutive: ${consecutive}, Similarity: ${similarityScore})`;
                             botOutput.appendChild(div);
                             fallback.forEach(num => allNumbersFreq[num - 1]++);
                         }
@@ -756,6 +782,18 @@
                 mid: numbers.filter(n => n > 15 && n <= 30).length,
                 high: numbers.filter(n => n > 30).length
             };
+        }
+
+        // 유사도 점수 계산 함수 (과거 번호와의 평균 유클리드 거리 기반)
+        function calculateSimilarity(numbers) {
+            const pastNumbers = lottoData.map(entry => entry.numbers);
+            const distances = pastNumbers.map(past => {
+                const diff = past.map((n, i) => (n - (numbers[i] || 0)) ** 2);
+                return Math.sqrt(diff.reduce((a, b) => a + b, 0));
+            });
+            const avgDistance = distances.reduce((a, b) => a + b, 0) / distances.length;
+            const maxDistance = Math.sqrt(6 * (45 ** 2)); // 최대 거리 (1~45 기준)
+            return Math.round((1 - avgDistance / maxDistance) * 100); // 0~100 점수
         }
 
         // 전략별 번호 생성 함수
