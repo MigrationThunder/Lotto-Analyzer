@@ -231,6 +231,8 @@
                 <button onclick="showWinningProbability()">당첨 확률</button>
                 <button onclick="analyzeHighFrequency()">고빈도 번호 분석</button>
                 <button onclick="analyzeWinningPatterns()">당첨 패턴 분석</button>
+                <button onclick="analyzeMeanDeviation()">평균 편차 분석</button>
+                <button onclick="analyzeRecentTrend()">최근 추세 분석</button>
             </div>
             <div id="analysis-output" class="analysis-output"></div>
         </div>
@@ -480,7 +482,7 @@
         function showWinningProbability() {
             const output = document.getElementById("analysis-output");
             output.innerHTML = "<strong>로또 당첨 확률</strong><br>";
-            const totalCombinations = 8145060; // 45C6
+            const totalCombinations = 8145060;
             const probabilities = {
                 "1등 (6개 일치)": 1,
                 "2등 (5개 일치 + 보너스)": 6,
@@ -508,13 +510,13 @@
             const frequency = Array(45).fill(0);
             lottoData.forEach(entry => entry.numbers.forEach(num => frequency[num - 1]++));
             const topNumbers = frequency
-                .map((count, index) => ({ number: index + 1, count }))
+                .map((count, index) => ({ num: index + 1, count }))
                 .sort((a, b) => b.count - a.count)
                 .slice(0, 10);
             output.innerHTML += `총 회차: ${lottoData.length}<br><br>`;
-            output.innerHTML += "가장 많이 나온 번호 상위 10개:<br>";
-            topNumbers.forEach(item => {
-                output.innerHTML += `${item.number}: ${item.count}회<br>`;
+            output.innerHTML += "가장 많이 나온 상위 10개 번호:<br>";
+            topNumbers.forEach(({ num, count }) => {
+                output.innerHTML += `${num}: ${count}회<br>`;
             });
         }
 
@@ -526,24 +528,17 @@
                 output.innerHTML += "데이터가 없습니다.";
                 return;
             }
-
-            // 연속 번호 분석
             let consecutiveCount = 0;
+            const rangeDistribution = { "1-10": 0, "11-20": 0, "21-30": 0, "31-40": 0, "41-45": 0 };
             lottoData.forEach(entry => {
                 const sorted = [...entry.numbers].sort((a, b) => a - b);
                 for (let i = 1; i < sorted.length; i++) {
                     if (sorted[i] - sorted[i - 1] === 1) {
                         consecutiveCount++;
-                        break; // 한 회차에 연속 번호가 있으면 1회로 계산
+                        break;
                     }
                 }
-            });
-            const consecutivePercentage = ((consecutiveCount / lottoData.length) * 100).toFixed(2);
-
-            // 구간 분포 패턴
-            const rangeDistribution = { "1-10": 0, "11-20": 0, "21-30": 0, "31-40": 0, "41-45": 0 };
-            lottoData.forEach(entry => {
-                entry.numbers.forEach(num => {
+                sorted.forEach(num => {
                     if (num <= 10) rangeDistribution["1-10"]++;
                     else if (num <= 20) rangeDistribution["11-20"]++;
                     else if (num <= 30) rangeDistribution["21-30"]++;
@@ -551,16 +546,74 @@
                     else rangeDistribution["41-45"]++;
                 });
             });
-
             output.innerHTML += `총 회차: ${lottoData.length}<br><br>`;
             output.innerHTML += "<strong>연속 번호 패턴</strong><br>";
-            output.innerHTML += `연속 번호가 포함된 회차: ${consecutiveCount}회 (${consecutivePercentage}%)<br>`;
+            output.innerHTML += `연속 번호가 포함된 회차: ${consecutiveCount}회 (${((consecutiveCount / lottoData.length) * 100).toFixed(2)}%)<br>`;
             output.innerHTML += "<br><strong>구간 분포 패턴</strong><br>";
             for (let range in rangeDistribution) {
                 const percentage = ((rangeDistribution[range] / (lottoData.length * 6)) * 100).toFixed(2);
                 output.innerHTML += `${range}: ${rangeDistribution[range]}회 (${percentage}%)<br>`;
             }
-            output.innerHTML += "<br>참고: 패턴은 과거 데이터의 경향일 뿐, 당첨을 보장하지 않습니다.";
+        }
+
+        // 평균 편차 분석
+        function analyzeMeanDeviation() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>평균 편차 분석</strong><br>";
+            if (lottoData.length === 0) {
+                output.innerHTML += "데이터가 없습니다.";
+                return;
+            }
+            const frequency = Array(45).fill(0);
+            lottoData.forEach(entry => entry.numbers.forEach(num => frequency[num - 1]++));
+            const totalNumbers = lottoData.length * 6;
+            const mean = totalNumbers / 45; // 번호당 평균 출현 횟수
+            const deviations = frequency.map((count, index) => ({
+                number: index + 1,
+                deviation: Math.abs(count - mean)
+            })).sort((a, b) => b.deviation - a.deviation);
+
+            output.innerHTML += `총 회차: ${lottoData.length}<br>`;
+            output.innerHTML += `평균 출현 횟수: ${mean.toFixed(2)}회<br><br>`;
+            output.innerHTML += "평균에서 크게 벗어난 번호 상위 10개:<br>";
+            deviations.slice(0, 10).forEach(item => {
+                output.innerHTML += `${item.number}: 편차 ${item.deviation.toFixed(2)} (출현: ${frequency[item.number - 1]}회)<br>`;
+            });
+            output.innerHTML += "<br>참고: 편차가 크다는 것은 평균보다 많이 또는 적게 나왔음을 의미합니다.";
+        }
+
+        // 최근 추세 분석
+        function analyzeRecentTrend() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>최근 추세 분석 (최근 10회차)</strong><br>";
+            if (lottoData.length < 10) {
+                output.innerHTML += "10회차 이상의 데이터가 필요합니다.";
+                return;
+            }
+            const recentData = lottoData.slice(-10); // 최근 10회차
+            const frequency = Array(45).fill(0);
+            recentData.forEach(entry => entry.numbers.forEach(num => frequency[num - 1]++));
+            
+            const hotNumbers = frequency
+                .map((count, index) => ({ num: index + 1, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5); // 상위 5개 핫 번호
+            const coldNumbers = frequency
+                .map((count, index) => ({ num: index + 1, count }))
+                .filter(item => item.count > 0)
+                .sort((a, b) => a.count - b.count)
+                .slice(0, 5); // 하위 5개 콜드 번호 (0 제외)
+
+            output.innerHTML += `분석 대상: 최근 ${recentData.length}회차<br><br>`;
+            output.innerHTML += "<strong>핫 번호 (자주 나온 상위 5개)</strong>:<br>";
+            hotNumbers.forEach(item => {
+                output.innerHTML += `${item.num}: ${item.count}회<br>`;
+            });
+            output.innerHTML += "<br><strong>콜드 번호 (덜 나온 상위 5개)</strong>:<br>";
+            coldNumbers.forEach(item => {
+                output.innerHTML += `${item.num}: ${item.count}회<br>`;
+            });
+            output.innerHTML += "<br>참고: 최근 추세는 단기 패턴일 뿐, 장기적인 당첨을 예측하지 않습니다.";
         }
 
         // 초기화
