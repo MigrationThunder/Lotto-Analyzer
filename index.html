@@ -43,10 +43,15 @@
             color: #333;
             font-size: 16px;
             font-weight: 700;
-            padding: 12px 25px;
+            padding: 12px 0;
+            width: 140px;
+            height: 44px;
+            box-sizing: border-box;
             border: 1px solid #e0e0e0;
             border-radius: 5px;
             background-color: #fff;
+            display: inline-block;
+            line-height: 18px;
             transition: all 0.3s;
         }
         .nav a:hover, .nav a.active {
@@ -55,13 +60,14 @@
             border-color: #00a1b9;
         }
         .container {
-            max-width: 1000px;
+            width: 1000px;
             margin: 30px auto;
-            padding: 20px;
+            padding: 40px;
             background-color: #fff;
             border: 1px solid #e0e0e0;
             border-radius: 5px;
             text-align: center;
+            box-sizing: border-box;
         }
         .section {
             display: none;
@@ -101,7 +107,7 @@
         .info {
             font-size: 14px;
             color: #666;
-            margin: 10px 0;
+            margin: 20px 0;
         }
         .info a {
             color: #00a1b9;
@@ -113,7 +119,9 @@
         button {
             background-color: #00a1b9;
             border: none;
-            padding: 12px 30px;
+            padding: 0;
+            width: 180px;
+            height: 44px;
             color: white;
             font-size: 16px;
             font-weight: 700;
@@ -125,18 +133,15 @@
             background-color: #008ca0;
         }
         input[type="number"] {
-            padding: 10px;
+            padding: 0 10px;
             border: 1px solid #e0e0e0;
             border-radius: 5px;
-            width: 120px;
+            width: 140px;
+            height: 44px;
             font-size: 14px;
+            box-sizing: border-box;
             margin-right: 10px;
-        }
-        select {
-            padding: 10px;
-            border: 1px solid #e0e0e0;
-            border-radius: 5px;
-            font-size: 14px;
+            vertical-align: middle;
         }
         .button-group {
             display: flex;
@@ -144,22 +149,28 @@
             justify-content: center;
             margin: 20px 0;
         }
+        @media (max-width: 1024px) {
+            .container {
+                width: 100%;
+                margin: 10px;
+                padding: 20px;
+            }
+        }
         @media (max-width: 768px) {
             .nav ul {
                 flex-direction: column;
                 gap: 10px;
                 padding: 10px;
             }
-            .container {
-                margin: 10px;
-                padding: 15px;
+            .nav a {
+                width: 100%;
             }
             .number {
                 width: 40px;
                 height: 40px;
                 font-size: 16px;
             }
-            button, input[type="number"], select {
+            button, input[type="number"] {
                 width: 100%;
                 margin: 5px 0;
             }
