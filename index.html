@@ -220,8 +220,7 @@
         <div id="analysis" class="section">
             <h2>번호 분석</h2>
             <div class="button-group">
-                <button onclick="analyzeRangeFrequency()">구간별 빈도 분석</button>
-                <button onclick="showStrategyTips()">로또 전략 팁</button>
+                <button onclick="analyzeEvenOdd()">홀짝 비율 분석</button>
             </div>
             <div id="analysis-output" class="analysis-output"></div>
         </div>
@@ -356,40 +355,28 @@
             ).join("");
         }
 
-        // 구간별 빈도 분석
-        function analyzeRangeFrequency() {
+        // 홀짝 비율 분석
+        function analyzeEvenOdd() {
             const output = document.getElementById("analysis-output");
-            output.innerHTML = "<strong>구간별 빈도 분석</strong><br>";
+            output.innerHTML = "<strong>홀짝 비율 분석</strong><br>";
             if (lottoData.length === 0) {
                 output.innerHTML += "데이터가 없습니다.";
                 return;
             }
-            const ranges = { "1-10": 0, "11-20": 0, "21-30": 0, "31-40": 0, "41-45": 0 };
-            lottoData.forEach(entry => entry.numbers.forEach(num => {
-                if (num <= 10) ranges["1-10"]++;
-                else if (num <= 20) ranges["11-20"]++;
-                else if (num <= 30) ranges["21-30"]++;
-                else if (num <= 40) ranges["31-40"]++;
-                else ranges["41-45"]++;
-            }));
-            for (let range in ranges) {
-                output.innerHTML += `${range}: ${ranges[range]}회<br>`;
+            const distribution = { "0:6": 0, "1:5": 0, "2:4": 0, "3:3": 0, "4:2": 0, "5:1": 0, "6:0": 0 };
+            lottoData.forEach(entry => {
+                const evenCount = entry.numbers.filter(num => num % 2 === 0).length;
+                const oddCount = 6 - evenCount;
+                distribution[`${evenCount}:${oddCount}`]++;
+            });
+            output.innerHTML += `총 회차: ${lottoData.length}<br><br>`;
+            for (let ratio in distribution) {
+                if (distribution[ratio] > 0) {
+                    const percentage = ((distribution[ratio] / lottoData.length) * 100).toFixed(2);
+                    output.innerHTML += `홀:${ratio.split(':')[1]}, 짝:${ratio.split(':')[0]} - ${distribution[ratio]}회 (${percentage}%)<br>`;
+                }
             }
-            output.innerHTML += `<br>총 회차: ${lottoData.length}, 총 번호 수: ${lottoData.length * 6}`;
-        }
-
-        // 로또 전략 팁
-        function showStrategyTips() {
-            const output = document.getElementById("analysis-output");
-            output.innerHTML = "<strong>로또 전략 팁</strong><br>";
-            output.innerHTML += `
-                1. <strong>랜덤 선택 유지</strong>: 로또는 완전 랜덤 게임이므로, 특정 패턴을 따르는 것보다 무작위로 선택하는 것이 좋습니다.<br>
-                2. <strong>구간 균형</strong>: 과거 데이터에서 구간별로 번호가 고르게 분포되는 경향이 있으니, 1-10, 11-20 등 각 구간에서 1-2개씩 선택해보세요.<br>
-                3. <strong>홀짝 비율</strong>: 통계적으로 홀수와 짝수가 3:3 또는 4:2 비율로 나오는 경우가 많습니다.<br>
-                4. <strong>합계 고려</strong>: 당첨 번호 합계가 100~150 사이일 확률이 높으니 참고하세요.<br>
-                5. <strong>연속 번호 피하기</strong>: 연속된 번호(예: 1,2,3)는 드물게 나옵니다.<br>
-                <br><strong>주의</strong>: 이 팁은 재미와 참고용일 뿐, 로또는 운에 의존하며 당첨 확률을 높이지 않습니다.
-            `;
+            output.innerHTML += "<br>참고: 이 비율은 과거 데이터의 통계일 뿐, 당첨 확률에 영향을 주지 않습니다.";
         }
 
         // 초기화
