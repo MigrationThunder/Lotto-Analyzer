@@ -128,6 +128,7 @@
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s;
+            margin: 5px;
         }
         button:hover {
             background-color: #008ca0;
@@ -145,6 +146,7 @@
         }
         .button-group {
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
             justify-content: center;
             margin: 20px 0;
@@ -220,7 +222,15 @@
         <div id="analysis" class="section">
             <h2>번호 분석</h2>
             <div class="button-group">
+                <button onclick="analyzeFrequency()">번호 빈도 분석</button>
+                <button onclick="analyzeRangeFrequency()">구간별 빈도 분석</button>
                 <button onclick="analyzeEvenOdd()">홀짝 비율 분석</button>
+                <button onclick="analyzeSum()">합계 분석</button>
+                <button onclick="analyzeLastDigit()">끝수 분석</button>
+                <button onclick="showStrategyTips()">로또 전략 팁</button>
+                <button onclick="showWinningProbability()">당첨 확률</button>
+                <button onclick="analyzeHighFrequency()">고빈도 번호 분석</button>
+                <button onclick="analyzeWinningPatterns()">당첨 패턴 분석</button>
             </div>
             <div id="analysis-output" class="analysis-output"></div>
         </div>
@@ -355,6 +365,43 @@
             ).join("");
         }
 
+        // 번호 빈도 분석
+        function analyzeFrequency() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>번호 빈도 분석</strong><br>";
+            if (lottoData.length === 0) {
+                output.innerHTML += "데이터가 없습니다.";
+                return;
+            }
+            const frequency = Array(45).fill(0);
+            lottoData.forEach(entry => entry.numbers.forEach(num => frequency[num - 1]++));
+            frequency.forEach((count, index) => {
+                if (count > 0) output.innerHTML += `${index + 1}: ${count}회<br>`;
+            });
+        }
+
+        // 구간별 빈도 분석
+        function analyzeRangeFrequency() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>구간별 빈도 분석</strong><br>";
+            if (lottoData.length === 0) {
+                output.innerHTML += "데이터가 없습니다.";
+                return;
+            }
+            const ranges = { "1-10": 0, "11-20": 0, "21-30": 0, "31-40": 0, "41-45": 0 };
+            lottoData.forEach(entry => entry.numbers.forEach(num => {
+                if (num <= 10) ranges["1-10"]++;
+                else if (num <= 20) ranges["11-20"]++;
+                else if (num <= 30) ranges["21-30"]++;
+                else if (num <= 40) ranges["31-40"]++;
+                else ranges["41-45"]++;
+            }));
+            for (let range in ranges) {
+                output.innerHTML += `${range}: ${ranges[range]}회<br>`;
+            }
+            output.innerHTML += `<br>총 회차: ${lottoData.length}, 총 번호 수: ${lottoData.length * 6}`;
+        }
+
         // 홀짝 비율 분석
         function analyzeEvenOdd() {
             const output = document.getElementById("analysis-output");
@@ -366,8 +413,7 @@
             const distribution = { "0:6": 0, "1:5": 0, "2:4": 0, "3:3": 0, "4:2": 0, "5:1": 0, "6:0": 0 };
             lottoData.forEach(entry => {
                 const evenCount = entry.numbers.filter(num => num % 2 === 0).length;
-                const oddCount = 6 - evenCount;
-                distribution[`${evenCount}:${oddCount}`]++;
+                distribution[`${evenCount}:${6 - evenCount}`]++;
             });
             output.innerHTML += `총 회차: ${lottoData.length}<br><br>`;
             for (let ratio in distribution) {
@@ -376,7 +422,145 @@
                     output.innerHTML += `홀:${ratio.split(':')[1]}, 짝:${ratio.split(':')[0]} - ${distribution[ratio]}회 (${percentage}%)<br>`;
                 }
             }
-            output.innerHTML += "<br>참고: 이 비율은 과거 데이터의 통계일 뿐, 당첨 확률에 영향을 주지 않습니다.";
+        }
+
+        // 합계 분석
+        function analyzeSum() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>합계 분석</strong><br>";
+            if (lottoData.length === 0) {
+                output.innerHTML += "데이터가 없습니다.";
+                return;
+            }
+            const sums = lottoData.map(entry => entry.numbers.reduce((a, b) => a + b, 0));
+            const bins = { "0-100": 0, "101-150": 0, "151-200": 0, "201+": 0 };
+            sums.forEach(sum => {
+                if (sum <= 100) bins["0-100"]++;
+                else if (sum <= 150) bins["101-150"]++;
+                else if (sum <= 200) bins["151-200"]++;
+                else bins["201+"]++;
+            });
+            output.innerHTML += `총 회차: ${lottoData.length}<br><br>`;
+            for (let bin in bins) {
+                const percentage = ((bins[bin] / lottoData.length) * 100).toFixed(2);
+                output.innerHTML += `${bin}: ${bins[bin]}회 (${percentage}%)<br>`;
+            }
+        }
+
+        // 끝수 분석
+        function analyzeLastDigit() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>끝수 분석</strong><br>";
+            if (lottoData.length === 0) {
+                output.innerHTML += "데이터가 없습니다.";
+                return;
+            }
+            const digits = Array(10).fill(0);
+            lottoData.forEach(entry => entry.numbers.forEach(num => digits[num % 10]++));
+            digits.forEach((count, index) => {
+                if (count > 0) output.innerHTML += `끝수 ${index}: ${count}회<br>`;
+            });
+        }
+
+        // 로또 전략 팁
+        function showStrategyTips() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>로또 전략 팁</strong><br>";
+            output.innerHTML += `
+                1. <strong>랜덤 선택 유지</strong>: 로또는 완전 랜덤 게임이므로, 특정 패턴을 따르는 것보다 무작위로 선택하는 것이 좋습니다.<br>
+                2. <strong>구간 균형</strong>: 과거 데이터에서 구간별로 번호가 고르게 분포되는 경향이 있으니, 1-10, 11-20 등 각 구간에서 1-2개씩 선택해보세요.<br>
+                3. <strong>홀짝 비율</strong>: 통계적으로 홀수와 짝수가 3:3 또는 4:2 비율로 나오는 경우가 많습니다.<br>
+                4. <strong>합계 고려</strong>: 당첨 번호 합계가 100~150 사이일 확률이 높으니 참고하세요.<br>
+                5. <strong>연속 번호 피하기</strong>: 연속된 번호(예: 1,2,3)는 드물게 나옵니다.<br>
+                <br><strong>주의</strong>: 이 팁은 재미와 참고용일 뿐, 로또는 운에 의존하며 당첨 확률을 높이지 않습니다.
+            `;
+        }
+
+        // 로또 당첨 확률
+        function showWinningProbability() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>로또 당첨 확률</strong><br>";
+            const totalCombinations = 8145060; // 45C6
+            const probabilities = {
+                "1등 (6개 일치)": 1,
+                "2등 (5개 일치 + 보너스)": 6,
+                "3등 (5개 일치)": 228,
+                "4등 (4개 일치)": 585,
+                "5등 (3개 일치)": 14820
+            };
+            output.innerHTML += "로또 6/45의 이론적 당첨 확률 (총 조합 수: 8,145,060)<br>";
+            for (let rank in probabilities) {
+                const chance = probabilities[rank];
+                const probability = (chance / totalCombinations * 100).toFixed(8);
+                output.innerHTML += `${rank}: ${chance} / 8,145,060 (${probability}%)<br>`;
+            }
+            output.innerHTML += "<br>참고: 실제 당첨은 번호 선택 패턴과 무관하며, 이론적 확률입니다.";
+        }
+
+        // 고빈도 번호 분석
+        function analyzeHighFrequency() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>고빈도 번호 분석</strong><br>";
+            if (lottoData.length === 0) {
+                output.innerHTML += "데이터가 없습니다.";
+                return;
+            }
+            const frequency = Array(45).fill(0);
+            lottoData.forEach(entry => entry.numbers.forEach(num => frequency[num - 1]++));
+            const topNumbers = frequency
+                .map((count, index) => ({ number: index + 1, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 10);
+            output.innerHTML += `총 회차: ${lottoData.length}<br><br>`;
+            output.innerHTML += "가장 많이 나온 번호 상위 10개:<br>";
+            topNumbers.forEach(item => {
+                output.innerHTML += `${item.number}: ${item.count}회<br>`;
+            });
+        }
+
+        // 로또 당첨 패턴 분석
+        function analyzeWinningPatterns() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>로또 당첨 패턴 분석</strong><br>";
+            if (lottoData.length === 0) {
+                output.innerHTML += "데이터가 없습니다.";
+                return;
+            }
+
+            // 연속 번호 분석
+            let consecutiveCount = 0;
+            lottoData.forEach(entry => {
+                const sorted = [...entry.numbers].sort((a, b) => a - b);
+                for (let i = 1; i < sorted.length; i++) {
+                    if (sorted[i] - sorted[i - 1] === 1) {
+                        consecutiveCount++;
+                        break; // 한 회차에 연속 번호가 있으면 1회로 계산
+                    }
+                }
+            });
+            const consecutivePercentage = ((consecutiveCount / lottoData.length) * 100).toFixed(2);
+
+            // 구간 분포 패턴
+            const rangeDistribution = { "1-10": 0, "11-20": 0, "21-30": 0, "31-40": 0, "41-45": 0 };
+            lottoData.forEach(entry => {
+                entry.numbers.forEach(num => {
+                    if (num <= 10) rangeDistribution["1-10"]++;
+                    else if (num <= 20) rangeDistribution["11-20"]++;
+                    else if (num <= 30) rangeDistribution["21-30"]++;
+                    else if (num <= 40) rangeDistribution["31-40"]++;
+                    else rangeDistribution["41-45"]++;
+                });
+            });
+
+            output.innerHTML += `총 회차: ${lottoData.length}<br><br>`;
+            output.innerHTML += "<strong>연속 번호 패턴</strong><br>";
+            output.innerHTML += `연속 번호가 포함된 회차: ${consecutiveCount}회 (${consecutivePercentage}%)<br>`;
+            output.innerHTML += "<br><strong>구간 분포 패턴</strong><br>";
+            for (let range in rangeDistribution) {
+                const percentage = ((rangeDistribution[range] / (lottoData.length * 6)) * 100).toFixed(2);
+                output.innerHTML += `${range}: ${rangeDistribution[range]}회 (${percentage}%)<br>`;
+            }
+            output.innerHTML += "<br>참고: 패턴은 과거 데이터의 경향일 뿐, 당첨을 보장하지 않습니다.";
         }
 
         // 초기화
