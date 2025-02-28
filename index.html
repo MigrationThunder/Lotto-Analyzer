@@ -99,11 +99,11 @@
             font-weight: 700;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        .range-1 { background-color: #ffeb3b; color: black; } /* 1~10 */
-        .range-2 { background-color: #03a9f4; } /* 11~20 */
-        .range-3 { background-color: #ff5722; } /* 21~30 */
-        .range-4 { background-color: #9c27b0; } /* 31~40 */
-        .range-5 { background-color: #4caf50; } /* 41~45 */
+        .range-1 { background-color: #ffeb3b; color: black; }
+        .range-2 { background-color: #03a9f4; }
+        .range-3 { background-color: #ff5722; }
+        .range-4 { background-color: #9c27b0; }
+        .range-5 { background-color: #4caf50; }
         .info {
             font-size: 14px;
             color: #666;
@@ -149,6 +149,14 @@
             justify-content: center;
             margin: 20px 0;
         }
+        .analysis-output {
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: left;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
         @media (max-width: 1024px) {
             .container {
                 width: 100%;
@@ -186,6 +194,7 @@
             <li><a href="#home" class="active" onclick="showSection('home')">홈</a></li>
             <li><a href="#history" onclick="showSection('history')">과거 당첨번호</a></li>
             <li><a href="#generator" onclick="showSection('generator')">번호 생성기</a></li>
+            <li><a href="#analysis" onclick="showSection('analysis')">번호 분석</a></li>
         </ul>
     </div>
     <div class="container">
@@ -207,6 +216,17 @@
                 <button onclick="generateNumbers()">랜덤 번호 생성</button>
             </div>
             <div id="generated-numbers" class="number-container"></div>
+        </div>
+        <div id="analysis" class="section">
+            <h2>번호 분석</h2>
+            <div class="button-group">
+                <button onclick="analyzeFrequency()">빈도 분석</button>
+                <button onclick="analyzeRange()">구간별 분석</button>
+                <button onclick="analyzeEvenOdd()">홀짝 분석</button>
+                <button onclick="analyzeSum()">합계 분석</button>
+                <button onclick="analyzeLastDigit()">끝수 분석</button>
+            </div>
+            <div id="analysis-output" class="analysis-output"></div>
         </div>
     </div>
 
@@ -337,6 +357,96 @@
             container.innerHTML = numbers.map(num => 
                 `<div class="number ${getRangeClass(num)}">${num}</div>`
             ).join("");
+        }
+
+        // 빈도 분석
+        function analyzeFrequency() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>번호 빈도 분석</strong><br>";
+            if (lottoData.length === 0) {
+                output.innerHTML += "데이터가 없습니다.";
+                return;
+            }
+            const frequency = Array(45).fill(0);
+            lottoData.forEach(entry => entry.numbers.forEach(num => frequency[num - 1]++));
+            frequency.forEach((count, index) => {
+                if (count > 0) output.innerHTML += `${index + 1}: ${count}회<br>`;
+            });
+        }
+
+        // 구간별 분석
+        function analyzeRange() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>구간별 분석</strong><br>";
+            if (lottoData.length === 0) {
+                output.innerHTML += "데이터가 없습니다.";
+                return;
+            }
+            const ranges = { "1-10": 0, "11-20": 0, "21-30": 0, "31-40": 0, "41-45": 0 };
+            lottoData.forEach(entry => entry.numbers.forEach(num => {
+                if (num <= 10) ranges["1-10"]++;
+                else if (num <= 20) ranges["11-20"]++;
+                else if (num <= 30) ranges["21-30"]++;
+                else if (num <= 40) ranges["31-40"]++;
+                else ranges["41-45"]++;
+            }));
+            for (let range in ranges) {
+                output.innerHTML += `${range}: ${ranges[range]}회<br>`;
+            }
+        }
+
+        // 홀짝 분석
+        function analyzeEvenOdd() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>홀짝 분석</strong><br>";
+            if (lottoData.length === 0) {
+                output.innerHTML += "데이터가 없습니다.";
+                return;
+            }
+            const distribution = { "0:6": 0, "1:5": 0, "2:4": 0, "3:3": 0, "4:2": 0, "5:1": 0, "6:0": 0 };
+            lottoData.forEach(entry => {
+                const evenCount = entry.numbers.filter(num => num % 2 === 0).length;
+                distribution[`${evenCount}:${6 - evenCount}`]++;
+            });
+            for (let ratio in distribution) {
+                if (distribution[ratio] > 0) output.innerHTML += `홀:${ratio.split(':')[1]}, 짝:${ratio.split(':')[0]} - ${distribution[ratio]}회<br>`;
+            }
+        }
+
+        // 합계 분석
+        function analyzeSum() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>합계 분석</strong><br>";
+            if (lottoData.length === 0) {
+                output.innerHTML += "데이터가 없습니다.";
+                return;
+            }
+            const sums = lottoData.map(entry => entry.numbers.reduce((a, b) => a + b, 0));
+            const bins = { "0-100": 0, "101-150": 0, "151-200": 0, "201+": 0 };
+            sums.forEach(sum => {
+                if (sum <= 100) bins["0-100"]++;
+                else if (sum <= 150) bins["101-150"]++;
+                else if (sum <= 200) bins["151-200"]++;
+                else bins["201+"]++;
+            });
+            for (let bin in bins) {
+                output.innerHTML += `${bin}: ${bins[bin]}회<br>`;
+            }
+        }
+
+        // 끝수 분석
+        function analyzeLastDigit() {
+            const output = document.getElementById("analysis-output");
+            output.innerHTML = "<strong>끝수 분석</strong><br>";
+            if (lottoData.length === 0) {
+                output.innerHTML += "데이터가 없습니다.";
+                return;
+            }
+            const digits = Array(10).fill(0);
+            lottoData.forEach(entry => entry.numbers.forEach(num => digits[num % 10]++));
+            digits.forEach((count, index) => {
+                if (count > 0) output.innerHTML += `끝수 ${index}: ${count}회<br>`;
+            });
         }
 
         // 초기화
