@@ -193,9 +193,6 @@
             <h2>최신 당첨 번호</h2>
             <div id="winning-numbers" class="number-container"></div>
             <p id="extra-info" class="info"></p>
-            <div class="button-group">
-                <button onclick="updateLatestLotto()">최신 데이터 업데이트</button>
-            </div>
             <p class="info"><a href="https://dhlottery.co.kr" target="_blank">로또 구매하러 가기</a></p>
         </div>
         <div id="history" class="section">
@@ -245,7 +242,11 @@
 
         // 최신 당첨 번호 표시
         function displayWinningNumbers() {
-            if (lottoData.length === 0) return;
+            if (lottoData.length === 0) {
+                document.getElementById("winning-numbers").innerHTML = "";
+                document.getElementById("extra-info").textContent = "데이터를 가져오는 중입니다...";
+                return;
+            }
             const latest = lottoData[lottoData.length - 1];
             const container = document.getElementById("winning-numbers");
             container.innerHTML = latest.numbers.map(num => 
@@ -291,8 +292,8 @@
             }
         }
 
-        // 최신 회차 업데이트
-        async function updateLatestLotto() {
+        // 최신 회차 가져오기
+        async function fetchLatestLotto() {
             const latestStored = lottoData.length > 0 ? Math.max(...lottoData.map(d => d.drwNo)) : 0;
             const latestDrwNo = await getLatestDrwNo();
             for (let i = latestStored + 1; i <= latestDrwNo; i++) {
@@ -305,7 +306,6 @@
             lottoData.sort((a, b) => a.drwNo - b.drwNo);
             localStorage.setItem('lottoData', JSON.stringify(lottoData));
             displayWinningNumbers();
-            alert(`최신 ${latestDrwNo}회차까지 업데이트 완료!`);
         }
 
         // 최신 회차 확인
@@ -341,9 +341,8 @@
 
         // 초기화
         window.onload = () => {
-            displayWinningNumbers();
-            updateLatestLotto();
-            setInterval(updateLatestLotto, 7 * 24 * 60 * 60 * 1000); // 7일마다 업데이트
+            fetchLatestLotto();
+            setInterval(fetchLatestLotto, 7 * 24 * 60 * 60 * 1000); // 7일마다 자동 업데이트
         };
     </script>
 </body>
