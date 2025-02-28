@@ -10,7 +10,7 @@
             font-family: 'Noto Sans KR', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f5f7f6;
+            background-color: #f0f4f8;
             color: #333;
         }
         .header {
@@ -65,9 +65,10 @@
             padding: 40px;
             background-color: #fff;
             border: 1px solid #e0e0e0;
-            border-radius: 5px;
+            border-radius: 8px;
             text-align: center;
             box-sizing: border-box;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
         .section {
             display: none;
@@ -76,8 +77,8 @@
             display: block;
         }
         h2 {
-            font-size: 20px;
-            color: #333;
+            font-size: 24px;
+            color: #00a1b9;
             margin: 0 0 20px;
             font-weight: 700;
         }
@@ -117,7 +118,7 @@
             text-decoration: underline;
         }
         button {
-            background-color: #00a1b9;
+            background: linear-gradient(135deg, #00a1b9, #007a8c);
             border: none;
             padding: 0;
             width: 180px;
@@ -125,13 +126,14 @@
             color: white;
             font-size: 16px;
             font-weight: 700;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: transform 0.2s, box-shadow 0.2s;
             margin: 5px;
         }
         button:hover {
-            background-color: #008ca0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 161, 185, 0.3);
         }
         input[type="number"] {
             padding: 0 10px;
@@ -147,36 +149,43 @@
         .button-group {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
             justify-content: center;
             margin: 20px 0;
         }
         .analysis-output {
             margin: 20px auto;
-            padding: 20px;
-            background-color: #f9fbfc;
-            border: 1px solid #00a1b9;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 700px;
+            padding: 25px;
+            background: linear-gradient(135deg, #ffffff, #e6f0fa);
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+            max-width: 750px;
             text-align: left;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #333;
+            font-size: 15px;
+            line-height: 1.8;
+            color: #2c3e50;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
         }
         .analysis-output strong {
+            font-size: 18px;
             color: #00a1b9;
-            font-size: 16px;
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #00a1b9;
+            padding-bottom: 5px;
         }
         .analysis-output br {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         @media (max-width: 1024px) {
             .container {
-                width: 100%;
-                margin: 10px;
+                width: 90%;
+                margin: 15px auto;
                 padding: 20px;
             }
             .analysis-output {
@@ -200,6 +209,9 @@
             button, input[type="number"] {
                 width: 100%;
                 margin: 5px 0;
+            }
+            h2 {
+                font-size: 20px;
             }
         }
     </style>
@@ -537,7 +549,7 @@
             });
         }
 
-        // 당첨 패턴 분석
+        // 로또 당첨 패턴 분석
         function analyzeWinningPatterns() {
             const output = document.getElementById("analysis-output");
             output.innerHTML = "<strong>로또 당첨 패턴 분석</strong><br>";
