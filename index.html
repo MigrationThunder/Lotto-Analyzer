@@ -220,8 +220,8 @@
         <div id="analysis" class="section">
             <h2>번호 분석</h2>
             <div class="button-group">
-                <button onclick="analyzeFrequency()">번호 빈도 분석</button>
-                <button onclick="showWinningProbability()">당첨 확률</button>
+                <button onclick="analyzeRangeFrequency()">구간별 빈도 분석</button>
+                <button onclick="showStrategyTips()">로또 전략 팁</button>
             </div>
             <div id="analysis-output" class="analysis-output"></div>
         </div>
@@ -356,46 +356,40 @@
             ).join("");
         }
 
-        // 번호 빈도 분석
-        function analyzeFrequency() {
+        // 구간별 빈도 분석
+        function analyzeRangeFrequency() {
             const output = document.getElementById("analysis-output");
-            output.innerHTML = "<strong>번호 빈도 분석</strong><br>";
+            output.innerHTML = "<strong>구간별 빈도 분석</strong><br>";
             if (lottoData.length === 0) {
                 output.innerHTML += "데이터가 없습니다.";
                 return;
             }
-            const frequency = Array(45).fill(0);
-            lottoData.forEach(entry => entry.numbers.forEach(num => frequency[num - 1]++));
-            frequency.forEach((count, index) => {
-                if (count > 0) output.innerHTML += `${index + 1}: ${count}회<br>`;
-            });
+            const ranges = { "1-10": 0, "11-20": 0, "21-30": 0, "31-40": 0, "41-45": 0 };
+            lottoData.forEach(entry => entry.numbers.forEach(num => {
+                if (num <= 10) ranges["1-10"]++;
+                else if (num <= 20) ranges["11-20"]++;
+                else if (num <= 30) ranges["21-30"]++;
+                else if (num <= 40) ranges["31-40"]++;
+                else ranges["41-45"]++;
+            }));
+            for (let range in ranges) {
+                output.innerHTML += `${range}: ${ranges[range]}회<br>`;
+            }
+            output.innerHTML += `<br>총 회차: ${lottoData.length}, 총 번호 수: ${lottoData.length * 6}`;
         }
 
-        // 로또 당첨 확률 계산
-        function showWinningProbability() {
+        // 로또 전략 팁
+        function showStrategyTips() {
             const output = document.getElementById("analysis-output");
-            output.innerHTML = "<strong>로또 당첨 확률</strong><br>";
-            
-            // 총 조합 수 (45C6)
-            const totalCombinations = 8145060; // 45 choose 6
-            
-            // 각 등수별 조합 수
-            const probabilities = {
-                "1등 (6개 일치)": 1,
-                "2등 (5개 일치 + 보너스)": 6 * 1, // 5개 고정 후 나머지 1개가 보너스
-                "3등 (5개 일치)": 6 * 38, // 5개 고정 후 나머지 1개가 보너스 제외 38개
-                "4등 (4개 일치)": 15 * 39 * 1, // 4개 고정 후 나머지 2개 조합
-                "5등 (3개 일치)": 20 * 741 // 3개 고정 후 나머지 3개 조합
-            };
-
-            // 확률 계산 및 출력
-            output.innerHTML += "로또 6/45의 이론적 당첨 확률 (총 조합 수: 8,145,060)<br>";
-            for (let rank in probabilities) {
-                const chance = probabilities[rank];
-                const probability = (chance / totalCombinations * 100).toFixed(8);
-                output.innerHTML += `${rank}: ${chance} / 8,145,060 (${probability}%)<br>`;
-            }
-            output.innerHTML += "<br>참고: 실제 당첨은 번호 선택 패턴과 무관하며, 이론적 확률입니다.";
+            output.innerHTML = "<strong>로또 전략 팁</strong><br>";
+            output.innerHTML += `
+                1. <strong>랜덤 선택 유지</strong>: 로또는 완전 랜덤 게임이므로, 특정 패턴을 따르는 것보다 무작위로 선택하는 것이 좋습니다.<br>
+                2. <strong>구간 균형</strong>: 과거 데이터에서 구간별로 번호가 고르게 분포되는 경향이 있으니, 1-10, 11-20 등 각 구간에서 1-2개씩 선택해보세요.<br>
+                3. <strong>홀짝 비율</strong>: 통계적으로 홀수와 짝수가 3:3 또는 4:2 비율로 나오는 경우가 많습니다.<br>
+                4. <strong>합계 고려</strong>: 당첨 번호 합계가 100~150 사이일 확률이 높으니 참고하세요.<br>
+                5. <strong>연속 번호 피하기</strong>: 연속된 번호(예: 1,2,3)는 드물게 나옵니다.<br>
+                <br><strong>주의</strong>: 이 팁은 재미와 참고용일 뿐, 로또는 운에 의존하며 당첨 확률을 높이지 않습니다.
+            `;
         }
 
         // 초기화
