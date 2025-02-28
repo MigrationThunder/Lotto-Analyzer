@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로또 정보</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -17,13 +16,14 @@
         .header {
             background-color: #fff;
             border-bottom: 1px solid #e0e0e0;
-            padding: 10px 0;
+            padding: 20px 0;
             text-align: center;
         }
         .header h1 {
-            font-size: 24px;
+            font-size: 28px;
             color: #00a1b9;
             margin: 0;
+            font-weight: 700;
         }
         .nav {
             background-color: #fff;
@@ -35,29 +35,33 @@
             list-style: none;
             padding: 0;
             margin: 0;
-            display: flex;
-            justify-content: center;
-            gap: 20px;
+            display: inline-flex;
+            gap: 10px;
         }
         .nav a {
             text-decoration: none;
             color: #333;
+            font-size: 16px;
             font-weight: 700;
-            padding: 10px 20px;
+            padding: 12px 25px;
+            border: 1px solid #e0e0e0;
             border-radius: 5px;
-            transition: background-color 0.3s;
+            background-color: #fff;
+            transition: all 0.3s;
         }
         .nav a:hover, .nav a.active {
             background-color: #00a1b9;
             color: white;
+            border-color: #00a1b9;
         }
         .container {
             max-width: 1000px;
-            margin: 20px auto;
+            margin: 30px auto;
             padding: 20px;
             background-color: #fff;
             border: 1px solid #e0e0e0;
             border-radius: 5px;
+            text-align: center;
         }
         .section {
             display: none;
@@ -67,45 +71,51 @@
         }
         h2 {
             font-size: 20px;
-            color: #00a1b9;
-            margin: 0 0 15px;
+            color: #333;
+            margin: 0 0 20px;
+            font-weight: 700;
         }
         .number-container {
             display: flex;
             gap: 10px;
             justify-content: center;
-            margin: 15px 0;
+            margin: 20px 0;
         }
         .number {
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: bold;
-            font-size: 16px;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            font-size: 18px;
+            font-weight: 700;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         .range-1 { background-color: #ffeb3b; color: black; } /* 1~10 */
         .range-2 { background-color: #03a9f4; } /* 11~20 */
         .range-3 { background-color: #ff5722; } /* 21~30 */
         .range-4 { background-color: #9c27b0; } /* 31~40 */
         .range-5 { background-color: #4caf50; } /* 41~45 */
-        .button-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            margin: 20px 0;
+        .info {
+            font-size: 14px;
+            color: #666;
+            margin: 10px 0;
+        }
+        .info a {
+            color: #00a1b9;
+            text-decoration: none;
+        }
+        .info a:hover {
+            text-decoration: underline;
         }
         button {
             background-color: #00a1b9;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 30px;
             color: white;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 700;
             border-radius: 5px;
             cursor: pointer;
@@ -115,46 +125,39 @@
             background-color: #008ca0;
         }
         input[type="number"] {
-            padding: 8px;
+            padding: 10px;
             border: 1px solid #e0e0e0;
             border-radius: 5px;
-            width: 100px;
+            width: 120px;
+            font-size: 14px;
             margin-right: 10px;
         }
         select {
-            padding: 8px;
+            padding: 10px;
             border: 1px solid #e0e0e0;
             border-radius: 5px;
-        }
-        .info {
-            text-align: center;
-            margin: 15px 0;
             font-size: 14px;
         }
-        .info a {
-            color: #00a1b9;
-            text-decoration: none;
-        }
-        .info a:hover {
-            text-decoration: underline;
-        }
-        canvas {
-            max-width: 100%;
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
             margin: 20px 0;
         }
         @media (max-width: 768px) {
             .nav ul {
                 flex-direction: column;
                 gap: 10px;
+                padding: 10px;
             }
             .container {
                 margin: 10px;
                 padding: 15px;
             }
             .number {
-                width: 30px;
-                height: 30px;
-                font-size: 14px;
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
             }
             button, input[type="number"], select {
                 width: 100%;
@@ -170,9 +173,8 @@
     <div class="nav">
         <ul>
             <li><a href="#home" class="active" onclick="showSection('home')">홈</a></li>
-            <li><a href="#history" onclick="showSection('history')">과거 당첨 번호</a></li>
-            <li><a href="#stats" onclick="showSection('stats')">통계 분석</a></li>
-            <li><a href="#generator" onclick="showSection('generator')">번호 생성</a></li>
+            <li><a href="#history" onclick="showSection('history')">과거 당첨번호</a></li>
+            <li><a href="#generator" onclick="showSection('generator')">번호 생성기</a></li>
         </ul>
     </div>
     <div class="container">
@@ -181,47 +183,27 @@
             <div id="winning-numbers" class="number-container"></div>
             <p id="extra-info" class="info"></p>
             <div class="button-group">
-                <button onclick="fetchAllLottoData()">모든 데이터 가져오기</button>
-                <button onclick="updateLatestLotto()">최신 회차 업데이트</button>
+                <button onclick="updateLatestLotto()">최신 데이터 업데이트</button>
             </div>
             <p class="info"><a href="https://dhlottery.co.kr" target="_blank">로또 구매하러 가기</a></p>
         </div>
         <div id="history" class="section">
-            <h2>과거 당첨 번호 조회</h2>
+            <h2>과거 당첨 번호</h2>
             <input type="number" id="round-input" placeholder="회차 입력" min="1">
             <button onclick="loadHistory()">조회</button>
             <div id="history-numbers" class="number-container"></div>
         </div>
-        <div id="stats" class="section">
-            <h2>통계 분석</h2>
-            <div class="button-group">
-                <button onclick="analyzeFrequency()">번호 빈도</button>
-                <button onclick="analyzeRange()">구간별</button>
-                <button onclick="analyzeEvenOdd()">홀짝</button>
-                <button onclick="analyzeSum()">합계</button>
-                <button onclick="analyzeLastDigit()">끝수</button>
-            </div>
-            <div id="stats-output"></div>
-        </div>
         <div id="generator" class="section">
-            <h2>번호 생성</h2>
+            <h2>번호 생성기</h2>
             <div class="button-group">
                 <button onclick="generateNumbers()">랜덤 번호 생성</button>
-                <button onclick="botRecommend()">추천 번호 받기</button>
-                <select id="setCount">
-                    <option value="1">1세트</option>
-                    <option value="5" selected>5세트</option>
-                    <option value="10">10세트</option>
-                </select>
             </div>
             <div id="generated-numbers" class="number-container"></div>
-            <div id="bot-output"></div>
         </div>
     </div>
 
     <script>
         let lottoData = [];
-        let currentChart = null;
 
         // 로컬 스토리지에서 데이터 로드
         try {
@@ -298,33 +280,15 @@
             }
         }
 
-        // 모든 데이터 가져오기
-        async function fetchAllLottoData() {
-            const latestDrwNo = await getLatestDrwNo();
-            const existingDrwNos = new Set(lottoData.map(d => d.drwNo));
-            for (let i = 1; i <= latestDrwNo; i++) {
-                if (!existingDrwNos.has(i)) {
-                    const data = await fetchLottoData(i);
-                    if (data) {
-                        lottoData.push(data);
-                        existingDrwNos.add(i);
-                    }
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                }
-            }
-            lottoData.sort((a, b) => a.drwNo - b.drwNo);
-            localStorage.setItem('lottoData', JSON.stringify(lottoData));
-            displayWinningNumbers();
-            alert(`최신 ${latestDrwNo}회차까지 데이터 가져오기 완료!`);
-        }
-
         // 최신 회차 업데이트
         async function updateLatestLotto() {
             const latestStored = lottoData.length > 0 ? Math.max(...lottoData.map(d => d.drwNo)) : 0;
             const latestDrwNo = await getLatestDrwNo();
             for (let i = latestStored + 1; i <= latestDrwNo; i++) {
                 const data = await fetchLottoData(i);
-                if (data) lottoData.push(data);
+                if (data) {
+                    lottoData.push(data);
+                }
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
             lottoData.sort((a, b) => a.drwNo - b.drwNo);
@@ -350,107 +314,6 @@
             return start;
         }
 
-        // 번호 빈도 분석
-        function analyzeFrequency() {
-            const output = document.getElementById("stats-output");
-            output.innerHTML = "<h2>번호 빈도 분석</h2>";
-            if (currentChart) currentChart.destroy();
-            const frequency = Array(45).fill(0);
-            lottoData.forEach(entry => entry.numbers.forEach(num => frequency[num - 1]++));
-            const canvas = document.createElement("canvas");
-            output.appendChild(canvas);
-            currentChart = new Chart(canvas, {
-                type: "bar",
-                data: {
-                    labels: Array.from({ length: 45 }, (_, i) => i + 1),
-                    datasets: [{ label: "출현 빈도", data: frequency, backgroundColor: "#00a1b9" }]
-                },
-                options: { scales: { y: { beginAtZero: true } } }
-            });
-        }
-
-        // 구간별 분석
-        function analyzeRange() {
-            const output = document.getElementById("stats-output");
-            output.innerHTML = "<h2>구간별 분석</h2>";
-            if (currentChart) currentChart.destroy();
-            const ranges = { "1-10": 0, "11-20": 0, "21-30": 0, "31-40": 0, "41-45": 0 };
-            lottoData.forEach(entry => entry.numbers.forEach(num => {
-                if (num <= 10) ranges["1-10"]++;
-                else if (num <= 20) ranges["11-20"]++;
-                else if (num <= 30) ranges["21-30"]++;
-                else if (num <= 40) ranges["31-40"]++;
-                else ranges["41-45"]++;
-            }));
-            const canvas = document.createElement("canvas");
-            output.appendChild(canvas);
-            currentChart = new Chart(canvas, {
-                type: "bar",
-                data: {
-                    labels: Object.keys(ranges),
-                    datasets: [{ label: "구간별 출현", data: Object.values(ranges), backgroundColor: "#00a1b9" }]
-                }
-            });
-        }
-
-        // 홀짝 분석
-        function analyzeEvenOdd() {
-            const output = document.getElementById("stats-output");
-            output.innerHTML = "<h2>홀짝 분석</h2>";
-            if (currentChart) currentChart.destroy();
-            const distribution = { "0:6": 0, "1:5": 0, "2:4": 0, "3:3": 0, "4:2": 0, "5:1": 0, "6:0": 0 };
-            lottoData.forEach(entry => {
-                const evenCount = entry.numbers.filter(num => num % 2 === 0).length;
-                distribution[`${evenCount}:${6 - evenCount}`]++;
-            });
-            const canvas = document.createElement("canvas");
-            output.appendChild(canvas);
-            currentChart = new Chart(canvas, {
-                type: "bar",
-                data: {
-                    labels: Object.keys(distribution),
-                    datasets: [{ label: "홀수:짝수", data: Object.values(distribution), backgroundColor: "#00a1b9" }]
-                }
-            });
-        }
-
-        // 합계 분석
-        function analyzeSum() {
-            const output = document.getElementById("stats-output");
-            output.innerHTML = "<h2>합계 분석</h2>";
-            if (currentChart) currentChart.destroy();
-            const sums = lottoData.map(entry => entry.numbers.reduce((a, b) => a + b, 0));
-            const bins = Array(26).fill(0);
-            sums.forEach(sum => bins[Math.min(Math.floor((sum - 21) / 10), 25)]++);
-            const canvas = document.createElement("canvas");
-            output.appendChild(canvas);
-            currentChart = new Chart(canvas, {
-                type: "bar",
-                data: {
-                    labels: Array.from({ length: 26 }, (_, i) => `${21 + i * 10}-${30 + i * 10}`),
-                    datasets: [{ label: "합계 분포", data: bins, backgroundColor: "#00a1b9" }]
-                }
-            });
-        }
-
-        // 끝수 분석
-        function analyzeLastDigit() {
-            const output = document.getElementById("stats-output");
-            output.innerHTML = "<h2>끝수 분석</h2>";
-            if (currentChart) currentChart.destroy();
-            const digits = Array(10).fill(0);
-            lottoData.forEach(entry => entry.numbers.forEach(num => digits[num % 10]++));
-            const canvas = document.createElement("canvas");
-            output.appendChild(canvas);
-            currentChart = new Chart(canvas, {
-                type: "bar",
-                data: {
-                    labels: Array.from({ length: 10 }, (_, i) => i),
-                    datasets: [{ label: "끝수 빈도", data: digits, backgroundColor: "#00a1b9" }]
-                }
-            });
-        }
-
         // 랜덤 번호 생성
         function generateNumbers() {
             const container = document.getElementById("generated-numbers");
@@ -463,52 +326,12 @@
             container.innerHTML = numbers.map(num => 
                 `<div class="number ${getRangeClass(num)}">${num}</div>`
             ).join("");
-            document.getElementById("bot-output").innerHTML = "";
-        }
-
-        // 추천 번호 생성
-        function botRecommend() {
-            const output = document.getElementById("bot-output");
-            output.innerHTML = "";
-            const setCount = parseInt(document.getElementById("setCount").value);
-            if (lottoData.length === 0) {
-                output.textContent = "먼저 데이터를 가져오세요.";
-                return;
-            }
-            const frequency = Array(45).fill(0);
-            lottoData.forEach(entry => entry.numbers.forEach(num => frequency[num - 1]++));
-            const weights = frequency.map(f => f / frequency.reduce((a, b) => a + b, 0));
-            const recommendedSets = new Set();
-
-            while (recommendedSets.size < setCount) {
-                const numbers = [];
-                while (numbers.length < 6) {
-                    let rand = Math.random(), cumulative = 0;
-                    for (let i = 0; i < weights.length; i++) {
-                        cumulative += weights[i];
-                        if (rand <= cumulative && !numbers.includes(i + 1)) {
-                            numbers.push(i + 1);
-                            break;
-                        }
-                    }
-                }
-                numbers.sort((a, b) => a - b);
-                const setString = numbers.join(",");
-                if (!recommendedSets.has(setString)) {
-                    recommendedSets.add(setString);
-                    const div = document.createElement("div");
-                    div.innerHTML = numbers.map(num => 
-                        `<div class="number ${getRangeClass(num)}" style="display:inline-block;margin:2px;">${num}</div>`
-                    ).join("") + ` (합계: ${numbers.reduce((a, b) => a + b, 0)})`;
-                    output.appendChild(div);
-                }
-            }
-            document.getElementById("generated-numbers").innerHTML = "";
         }
 
         // 초기화
         window.onload = () => {
             displayWinningNumbers();
+            updateLatestLotto();
             setInterval(updateLatestLotto, 7 * 24 * 60 * 60 * 1000); // 7일마다 업데이트
         };
     </script>
